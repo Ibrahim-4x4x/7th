@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>Comparisons Worksheet: (not) as ... as | Auto-Correcting Activities</title>
     <style>
-        /* ... (all existing styles remain unchanged) ... */
         * {
             margin: 0;
             padding: 0;
@@ -285,96 +284,6 @@
             }
         }
     </style>
-
-    <!-- 🔒 ANTI-LEAVE & ANTI-REPEAT CODE (block right-click, shortcuts, beforeunload, session flag) -->
-    <script>
-        (function() {
-            // 1. Warn before leaving / refreshing if any answer has been given
-            let hasUserInput = false;
-
-            // Helper: check if any radio / input has non-empty / selected value
-            function checkAnyAnswer() {
-                // check listening radios
-                for (let i = 1; i <= 6; i++) {
-                    let radios = document.querySelectorAll(`input[name="q${i}"]`);
-                    for (let r of radios) {
-                        if (r.checked) return true;
-                    }
-                }
-                // check all text inputs (rewrite, gabriel, friends)
-                const textInputs = document.querySelectorAll('input[type="text"], input.field-input');
-                for (let inp of textInputs) {
-                    if (inp.value && inp.value.trim() !== "") return true;
-                }
-                return false;
-            }
-
-            // Update flag on any input change
-            function updateHasUserInput() {
-                hasUserInput = checkAnyAnswer();
-            }
-
-            // Listen to changes on the whole document
-            document.addEventListener('change', updateHasUserInput);
-            document.addEventListener('input', updateHasUserInput);
-
-            // Beforeunload handler (only if answers exist)
-            window.addEventListener('beforeunload', function (e) {
-                if (hasUserInput) {
-                    e.preventDefault();
-                    e.returnValue = '⚠️ You have started the activity. Leaving or refreshing will reset your progress. Are you sure you want to leave?';
-                    return e.returnValue;
-                }
-            });
-
-            // 2. Disable right-click context menu completely
-            document.addEventListener('contextmenu', function(e) {
-                e.preventDefault();
-                return false;
-            });
-
-            // 3. Disable common keyboard shortcuts that allow refresh / devtools
-            document.addEventListener('keydown', function(e) {
-                // F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U, Ctrl+R, Ctrl+Shift+R, Ctrl+F5, Cmd+R (Mac)
-                if (e.key === 'F12' || 
-                    (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J')) ||
-                    (e.ctrlKey && e.key === 'u') ||
-                    (e.ctrlKey && e.key === 'r') ||
-                    (e.ctrlKey && e.shiftKey && e.key === 'R') ||
-                    (e.ctrlKey && e.key === 'F5') ||
-                    (e.metaKey && e.key === 'r')) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    return false;
-                }
-                // Also block Ctrl+Shift+C (inspect element)
-                if (e.ctrlKey && e.shiftKey && e.key === 'C') {
-                    e.preventDefault();
-                    return false;
-                }
-            });
-
-            // 4. Optional: prevent repeat activity via session flag (only one attempt per tab session)
-            if (sessionStorage.getItem('worksheet_visited') === 'true') {
-                // Instead of blocking completely, show a gentle warning in console and overlay (optional)
-                console.warn('This worksheet may have been already attempted in this tab. Please use a fresh tab if allowed by your teacher.');
-                // You can uncomment the next line to show an alert:
-                // alert('⚠️ You have already loaded this activity in this tab. Refresh or repeat might reset your answers.');
-            } else {
-                sessionStorage.setItem('worksheet_visited', 'true');
-            }
-
-            // Expose a reset flag for the reset button to clear the "hasUserInput" state after reset
-            window.resetAntiLeaveFlag = function() {
-                hasUserInput = false;
-                // Optionally clear session storage flag? but we keep it to prevent same-tab repeat.
-                // But resetting should allow fresh start within same page without leaving.
-                setTimeout(() => {
-                    if (!checkAnyAnswer()) hasUserInput = false;
-                }, 50);
-            };
-        })();
-    </script>
 </head>
 <body>
 <div class="worksheet-container">
@@ -439,7 +348,7 @@
         </div>
     </div>
 
-    <!-- ========== ACTIVITY 3: GABRIEL vs OMAR ========= -->
+    <!-- ========== ACTIVITY 3: GABRIEL vs OMAR (data comparison) ========= -->
     <div class="activity-card">
         <div class="activity-title">📊 3. Compare Gabriel & Omar — write sentences with (not) as ... as</div>
         <div class="activity-content">
@@ -459,7 +368,7 @@
         </div>
     </div>
 
-    <!-- ========== ACTIVITY 4: COMPARE TWO FRIENDS ========= -->
+    <!-- ========== ACTIVITY 4: COMPARE TWO FRIENDS (open practice) ========= -->
     <div class="activity-card">
         <div class="activity-title">👥 4. Compare two friends — use (not) as ... as</div>
         <div class="activity-content">
@@ -484,14 +393,20 @@
 </div>
 
 <script>
-    // ---------- ANSWER KEYS (same as before) ----------
+    // ---------- ANSWER KEYS ----------
+    // Listening correct answers (based on typical logical comparisons & common patterns)
+    // answer key: 1a, 2a, 3b, 4a, 5a, 6a
     const listeningKey = { q1: 'a', q2: 'a', q3: 'b', q4: 'a', q5: 'a', q6: 'a' };
+    
+    // Rewrite expected answers (flexible matching)
     const rewriteExpected = [
         { id: 'rewrite2', patterns: [/you are as old as your friend/i, /you're as old as your friend/i, /you are as old as your friend\.?$/i] },
         { id: 'rewrite3', patterns: [/lucia isn't as tidy as her sister/i, /lucia is not as tidy as her sister/i, /lucia isn’t as tidy as her sister/i] },
         { id: 'rewrite4', patterns: [/zaid is as clever as his brother/i, /zaid's as clever as his brother/i] },
         { id: 'rewrite5', patterns: [/i'm as confident as you are/i, /i am as confident as you are/i, /i'm as confident as you$/i] }
     ];
+    
+    // Gabriel & Omar expected answers (flexible)
     const gabExpected = [
         { id: 'gabTall', patterns: [/omar is as tall as gabriel/i, /omar is as tall as gabriel\.?$/i] },
         { id: 'gabSports', patterns: [/gabriel isn't as keen on sports as omar/i, /gabriel is not as keen on sports as omar/i, /gabriel isn’t as keen on sports as omar/i] },
@@ -499,7 +414,8 @@
         { id: 'gabHard', patterns: [/gabriel is as hard-working as omar/i, /gabriel is as hardworking as omar/i, /gabriel’s as hard-working as omar/i] },
         { id: 'gabBad', patterns: [/omar isn't as bad as gabriel/i, /omar isn't as bad at keeping secrets as gabriel/i, /omar is not as bad as gabriel/i, /omar is not as bad at keeping secrets as gabriel/i] }
     ];
-
+    
+    // helper: check rewrite
     function checkRewriteField(inputElem, patternsArr) {
         let val = inputElem.value.trim();
         if (val === "") return false;
@@ -508,58 +424,96 @@
         }
         return false;
     }
-
+    
+    // compute scores
     function computeScores() {
+        // 1. Listening (6 items)
         let listeningScore = 0;
         for (let i = 1; i <= 6; i++) {
-            let selected = document.querySelector(`input[name="q${i}"]:checked`);
-            if (selected && selected.value === listeningKey[`q${i}`]) listeningScore++;
+            let radioName = `q${i}`;
+            let selected = document.querySelector(`input[name="${radioName}"]:checked`);
+            if (selected && selected.value === listeningKey[radioName]) {
+                listeningScore++;
+            }
         }
+        let listeningMax = 6;
+        
+        // 2. Rewrite (4 items)
         let rewriteScore = 0;
         rewriteExpected.forEach(item => {
             let inputField = document.getElementById(item.id);
             if (inputField && checkRewriteField(inputField, item.patterns)) rewriteScore++;
         });
+        let rewriteMax = 4;
+        
+        // 3. Gabriel & Omar (5 items: tall, sports, maths, hard-working, bad) note: old is example not graded.
         let gabScore = 0;
         gabExpected.forEach(item => {
             let inputField = document.getElementById(item.id);
             if (inputField && checkRewriteField(inputField, item.patterns)) gabScore++;
         });
+        let gabMax = 5;
+        
         let total = listeningScore + rewriteScore + gabScore;
-        let totalMax = 6 + 4 + 5;
-        displayListeningFeedback(listeningScore, 6);
-        displayRewriteFeedback(rewriteScore, 4);
-        displayGabrielFeedback(gabScore, 5);
-        document.getElementById('totalScoreArea').innerHTML = `📊 Total score: ${total} / ${totalMax}  (Listening: ${listeningScore}/6 | Rewrite: ${rewriteScore}/4 | Compare Gabriel/Omar: ${gabScore}/5)`;
+        let totalMax = listeningMax + rewriteMax + gabMax;
+        
+        // update feedback texts with detailed marking
+        displayListeningFeedback(listeningScore, listeningMax);
+        displayRewriteFeedback(rewriteScore, rewriteMax);
+        displayGabrielFeedback(gabScore, gabMax);
+        
+        document.getElementById('totalScoreArea').innerHTML = `📊 Total score: ${total} / ${totalMax}  (Listening: ${listeningScore}/${listeningMax} | Rewrite: ${rewriteScore}/${rewriteMax} | Compare Gabriel/Omar: ${gabScore}/${gabMax})`;
+        return {total, totalMax};
     }
-
+    
     function displayListeningFeedback(score, max) {
         const container = document.getElementById('listeningFeedback');
         let incorrectList = [];
         for (let i = 1; i <= 6; i++) {
-            let selected = document.querySelector(`input[name="q${i}"]:checked`);
+            let radioName = `q${i}`;
+            let selected = document.querySelector(`input[name="${radioName}"]:checked`);
             let userVal = selected ? selected.value : "none";
-            if (userVal !== listeningKey[`q${i}`]) incorrectList.push(`${i} (✓ ${listeningKey[`q${i}`].toUpperCase()})`);
+            let correct = listeningKey[radioName];
+            if (userVal !== correct) {
+                incorrectList.push(`${i} (✓ ${correct.toUpperCase()})`);
+            }
         }
-        if (incorrectList.length === 0 && score === max) container.innerHTML = `✅ Listening: ${score}/${max} — all correct!`;
-        else container.innerHTML = `🎧 Listening score: ${score}/${max}. ${incorrectList.length ? `Mistakes on questions: ${incorrectList.join(', ')}.` : ''} <br> <span style="font-size:0.8rem;">✔ Correct answers: 1a, 2a, 3b, 4a, 5a, 6a</span>`;
+        if (incorrectList.length === 0 && score === max) {
+            container.innerHTML = `✅ Listening: ${score}/${max} — all correct!`;
+            container.style.color = "#2c6e2c";
+        } else {
+            container.innerHTML = `🎧 Listening score: ${score}/${max}. ${incorrectList.length ? `Mistakes on questions: ${incorrectList.join(', ')}.` : ''} <br> <span style="font-size:0.8rem;">✔ Correct answers: 1a, 2a, 3b, 4a, 5a, 6a</span>`;
+            container.style.color = "#a45d2e";
+        }
     }
-
+    
     function displayRewriteFeedback(score, max) {
         const feedbackDiv = document.getElementById('rewriteFeedback');
         let details = [];
         const ids = ['rewrite2', 'rewrite3', 'rewrite4', 'rewrite5'];
-        const expectedStrings = ["You are as old as your friend.", "Lucia isn't as tidy as her sister.", "Zaid is as clever as his brother.", "I'm as confident as you are."];
+        const expectedStrings = [
+            "You are as old as your friend.",
+            "Lucia isn't as tidy as her sister.",
+            "Zaid is as clever as his brother.",
+            "I'm as confident as you are."
+        ];
         ids.forEach((id, idx) => {
             let inputField = document.getElementById(id);
-            let isCorrect = inputField ? checkRewriteField(inputField, rewriteExpected[idx].patterns) : false;
-            if (!isCorrect && inputField && inputField.value.trim() !== "") details.push(`${idx+2} ✘ (expected: "${expectedStrings[idx]}")`);
-            else if (!isCorrect && (!inputField || inputField.value.trim() === "")) details.push(`${idx+2} ✘ (empty)`);
-            else details.push(`${idx+2} ✓`);
+            let isCorrect = false;
+            if (inputField) isCorrect = checkRewriteField(inputField, rewriteExpected[idx].patterns);
+            if (!isCorrect && inputField && inputField.value.trim() !== "") {
+                details.push(`${idx+2} ✘ (expected: "${expectedStrings[idx]}")`);
+            } else if (!isCorrect && (!inputField || inputField.value.trim() === "")) {
+                details.push(`${idx+2} ✘ (empty)`);
+            } else if (isCorrect) {
+                details.push(`${idx+2} ✓`);
+            }
         });
         feedbackDiv.innerHTML = `✍️ Rewrite score: ${score}/${max}<br> ${details.join(' | ')}`;
+        if (score === max) feedbackDiv.style.color = "#2c6e2c";
+        else feedbackDiv.style.color = "#bc6c25";
     }
-
+    
     function displayGabrielFeedback(score, max) {
         const gabDiv = document.getElementById('gabrielFeedback');
         let rows = [
@@ -572,19 +526,36 @@
         let statuses = [];
         rows.forEach(row => {
             let inp = document.getElementById(row.id);
-            let patternSet = gabExpected.find(p => p.id === row.id)?.patterns || [];
-            let correct = inp ? checkRewriteField(inp, patternSet) : false;
-            statuses.push(`${row.label}: ${correct ? '✓' : '✘'}`);
+            let correct = false;
+            if (inp) {
+                let patternSet = gabExpected.find(p => p.id === row.id)?.patterns || [];
+                correct = checkRewriteField(inp, patternSet);
+            }
+            let mark = correct ? '✓' : '✘';
+            statuses.push(`${row.label}: ${mark}`);
         });
         gabDiv.innerHTML = `📊 Gabriel & Omar section score: ${score}/${max}<br> ${statuses.join(' | ')}<br><span style="font-size:0.75rem;">✔ Expected answers: Omar is as tall as Gabriel. / Gabriel isn't as keen on sports as Omar. / Omar isn't as good at Maths as Gabriel. / Gabriel is as hard-working as Omar. / Omar isn't as bad at keeping secrets as Gabriel.</span>`;
+        gabDiv.style.color = score === max ? "#2c6e2c" : "#b45f2b";
     }
-
+    
+    // display sample for friends section (not graded)
     document.getElementById('showSampleFriends').addEventListener('click', () => {
         const sampleDiv = document.getElementById('sampleFriendsDiv');
-        sampleDiv.innerHTML = `📌 Example comparisons:<br>✨ (old) → "Anna isn't as old as Luis."<br>✨ (friendly) → "Maria is as friendly as Sofia."<br>✨ (interested in art) → "Tom isn't as interested in art as Leo."<br>✨ (good at languages) → "Elena is as good at languages as Kim."<br>✨ (easy to get on with) → "Carlos is as easy to get on with as David."<br>✨ (confident) → "Maya isn't as confident as Nina."`;
+        sampleDiv.innerHTML = `📌 Example comparisons:<br>
+        ✨ (old)  → "Anna isn't as old as Luis."<br>
+        ✨ (friendly) → "Maria is as friendly as Sofia."<br>
+        ✨ (interested in art) → "Tom isn't as interested in art as Leo."<br>
+        ✨ (good at languages) → "Elena is as good at languages as Kim."<br>
+        ✨ (easy to get on with) → "Carlos is as easy to get on with as David."<br>
+        ✨ (confident) → "Maya isn't as confident as Nina."`;
+        sampleDiv.style.background = "#eff4fa";
+        sampleDiv.style.padding = "10px";
+        sampleDiv.style.borderRadius = "18px";
     });
-
+    
+    // Reset all fields
     function resetAll() {
+        // reset radios
         for (let i = 1; i <= 6; i++) {
             let radios = document.querySelectorAll(`input[name="q${i}"]`);
             radios.forEach(radio => radio.checked = false);
@@ -600,12 +571,55 @@
         document.getElementById('gabrielFeedback').innerHTML = '';
         document.getElementById('sampleFriendsDiv').innerHTML = '';
         document.getElementById('totalScoreArea').innerHTML = '📊 Total score: -- / 15';
-        // Reset the anti-leave flag
-        if (window.resetAntiLeaveFlag) window.resetAntiLeaveFlag();
+    }
+    
+    document.getElementById('checkAllBtn').addEventListener('click', () => {
+        computeScores();
+    });
+    document.getElementById('resetBtn').addEventListener('click', () => {
+        resetAll();
+    });
+    
+    // Function to handle the locking state
+ function lockActivity() {
+        localStorage.setItem("unit7_status", "locked");
+        showLockScreen();
     }
 
-    document.getElementById('checkAllBtn').addEventListener('click', computeScores);
-    document.getElementById('resetBtn').addEventListener('click', resetAll);
+    function showLockScreen() {
+        document.getElementById('exam-content').style.display = 'none';
+        document.getElementById('start-area').style.display = 'none';
+        document.getElementById('lock-screen').style.display = 'block';
+    }
+
+    function unlockExam() {
+        if (document.getElementById('teacher-password').value === TEACHER_SECRET) {
+            localStorage.removeItem("unit7_status");
+            location.reload();
+        } else {
+            document.getElementById('password-error').style.display = 'block';
+        }
+    }
+
+    // --- SECURITY MONITORING ---
+
+    // 1. Detect if the user switches tabs or minimizes the window
+    document.addEventListener("visibilitychange", function() {
+        if (document.hidden && document.getElementById('exam-content').style.display === 'block') {
+            lockActivity();
+            alert("Activity Locked: You left the page during the exam.");
+        }
+    });
+
+    // 2. Detect if the window loses focus (e.g., clicking on another app or a popup)
+    window.addEventListener("blur", function() {
+        if (document.getElementById('exam-content').style.display === 'block') {
+            lockActivity();
+            alert("Activity Locked: Window lost focus.");
+        });
+    // optional initial hint
+    console.log("Worksheet ready — auto-correct active.");
+    
 </script>
 </body>
 </html>
