@@ -17,11 +17,22 @@
             padding: 40px 20px;
             color: #1e2a3a;
             transition: filter 0.2s;
+            /* Prevent any text selection across the browser tab */
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+        }
+
+        /* Input text fields must remain interactive for typing, but selection/copying inside them is blocked */
+        input[type="text"], input[type="password"] {
+            user-select: text !important;
+            -webkit-user-select: text !important;
         }
 
         /* Blur overlay when locked */
         body.locked .worksheet-container {
-            filter: blur(5px);
+            filter: blur(8px);
             pointer-events: none;
             user-select: none;
         }
@@ -30,48 +41,55 @@
             display: flex;
         }
 
-        .lock-overlay {
+        .lock-overlay, .gate-overlay {
             display: none;
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(8px);
+            background: rgba(11, 15, 25, 0.95);
+            backdrop-filter: blur(12px);
             z-index: 10000;
             justify-content: center;
             align-items: center;
             font-family: 'Segoe UI', system-ui;
         }
 
+        .gate-overlay {
+            display: flex; /* Active on load to force full screen */
+            background: #0f172a;
+        }
+
         .lock-card {
             background: white;
-            max-width: 460px;
+            max-width: 480px;
             width: 90%;
-            padding: 32px 28px;
-            border-radius: 48px;
+            padding: 35px 30px;
+            border-radius: 32px;
             text-align: center;
-            box-shadow: 0 25px 45px rgba(0,0,0,0.3);
-            animation: fadeInUp 0.2s ease;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            animation: fadeInUp 0.3s ease;
         }
 
         .lock-card h2 {
             font-size: 1.8rem;
             margin-bottom: 12px;
-            color: #c4452c;
+            color: #dc2626;
         }
 
         .lock-card p {
             margin-bottom: 24px;
-            color: #2c3e4e;
+            color: #475569;
+            font-size: 0.95rem;
+            line-height: 1.6;
         }
 
         .lock-card input {
             width: 100%;
             padding: 14px 18px;
             font-size: 1rem;
-            border: 2px solid #d4dee8;
+            border: 2px solid #cbd5e1;
             border-radius: 60px;
             margin-bottom: 18px;
             outline: none;
@@ -80,30 +98,33 @@
         }
 
         .lock-card input:focus {
-            border-color: #1f5a7a;
+            border-color: #2563eb;
         }
 
-        .lock-card button {
-            background: #1f5a7a;
+        .lock-card button, .gate-card button {
+            background: #2563eb;
             border: none;
             color: white;
             font-weight: bold;
-            padding: 12px 24px;
+            padding: 14px 28px;
             border-radius: 60px;
             font-size: 1rem;
             cursor: pointer;
             width: 100%;
-            transition: 0.1s;
+            transition: all 0.2s;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
         }
 
-        .lock-card button:hover {
-            background: #0f415b;
+        .lock-card button:hover, .gate-card button:hover {
+            background: #1d4ed8;
+            transform: translateY(-1px);
         }
 
         .error-msg {
-            color: #d9534f;
+            color: #dc2626;
             margin-top: 12px;
             font-size: 0.85rem;
+            font-weight: 600;
         }
 
         @keyframes fadeInUp {
@@ -324,19 +345,7 @@
         }
     </style>
     <script>
-        /* --- SECURE ANTI-HISTORY TRAP WITH TEACHER OVERRIDE RELOAD --- */
-        function triggerTeacherOverride() {
-            const enteredPass = document.getElementById('trapOverrideInput').value.trim();
-            if (enteredPass === "0007") {
-                localStorage.removeItem('worksheet_permanently_submitted');
-                localStorage.removeItem('worksheet_status_7th');
-                sessionStorage.clear();
-                window.location.reload();
-            } else {
-                alert("❌ Incorrect teacher code.");
-            }
-        }
-
+        /* --- SECURE ANTI-HISTORY TRAP --- */
         if (localStorage.getItem('worksheet_permanently_submitted') === 'true') {
             document.documentElement.innerHTML = `
             <head>
@@ -346,7 +355,6 @@
             <body style="background:#0b0f19;color:#ff6b6b;display:flex;flex-direction:column;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;padding:20px;text-align:center;">
                 <h2>🔒 Access Terminated</h2>
                 <p style="color:#a0aec0;margin-top:10px;max-width:400px;line-height:1.5;">This evaluation session has already been completed and recorded. Re-entry is strictly prohibited.</p>
-                
                 <div style="margin-top:30px; background:#161b26; padding:20px 30px; border-radius:20px; border:1px solid #242b3d; box-shadow:0 10px 25px rgba(0,0,0,0.4);">
                     <p style="color:#e2e8f0; font-size:0.85rem; margin-bottom:12px; font-weight:bold;">🛠️ TEACHER AUTHORIZATION OVERRIDE:</p>
                     <input type="password" id="overrideInput" placeholder="Enter password to reload" style="padding:10px 14px; border-radius:30px; border:1px solid #333f57; background:#1f2738; color:#fff; text-align:center; outline:none; margin-bottom:12px; width:100%; display:block; box-sizing:border-box;">
@@ -354,7 +362,6 @@
                 </div>
             </body>`;
             
-            // Post-render binding because the scripts inside standard strings lose bindings
             setTimeout(() => {
                 document.getElementById('overrideBtn').addEventListener('click', () => {
                     if (document.getElementById('overrideInput').value.trim() === "0007") {
@@ -378,19 +385,28 @@
 </head>
 <body>
 
+<div id="gateOverlay" class="gate-overlay">
+    <div class="lock-card" style="max-width: 520px;">
+        <h2>🔒 Controlled Proctored Session</h2>
+        <p>This worksheet is configured with an automated anti-cheat tracking grid. Clicking the button below will initialize **Full-Screen Examination Mode**.</p>
+        <p style="font-size:0.8rem; color:#dc2626; font-weight:bold; margin-top:-10px;">⚠️ Exiting full screen, copying content, or shifting tab focus will instantly terminate the examination grid.</p>
+        <button id="startExamBtn">🚀 Start Examination & Lock Screen</button>
+    </div>
+</div>
+
 <div id="lockOverlay" class="lock-overlay">
     <div class="lock-card">
         <h2>🔒 Activity Locked</h2>
-        <p>⚠️ You left the page, minimized the tab, completed the activity, or the window lost focus.<br>Enter teacher password to continue.</p>
-        <input type="password" id="passwordInput" placeholder="Enter password" autocomplete="off">
-        <button id="unlockBtn">Unlock Worksheet</button>
+        <p>⚠️ Terminal Security Breach Caught:<br>You attempted to exit Full Screen, altered window dimension scale, switched browser tabs, or clicked outside the app area.<br><br><b>Enter teacher authorization code to recover:</b></p>
+        <input type="password" id="passwordInput" placeholder="Enter teacher password" autocomplete="off">
+        <button id="unlockBtn">Re-Verify & Engage Full Screen</button>
         <div id="lockErrorMsg" class="error-msg"></div>
     </div>
 </div>
 
 <div class="worksheet-container">
     <h1>📝 WOW! Culture — Lesson 8</h1>
-    <div class="sub">Non-verbal Communication & Global Languages | 🔐 Auto-Destruct History Framework Active</div>
+    <div class="sub">Non-verbal Communication & Global Languages | 🔐 Full Proctored Clipboard and Screen Framework Active</div>
 
     <div class="activity-card">
         <div class="activity-title">📖 1. After you read: Complete the sentences</div>
@@ -552,18 +568,36 @@
 </div>
 
 <script>
-    /* --- SECURITY SUBSYSTEM --- */
-    const TEACHER_PASSWORD = "5533";
+    /* --- COMPREHENSIVE SECURITY SUBSYSTEM --- */
+    const TEACHER_PASSWORD = "0007";
     let isLocked = false;
     let hasAnswersBeforeLeave = false;
+    let proctorGridActive = false;
 
     const lockOverlay = document.getElementById('lockOverlay');
     const passwordInput = document.getElementById('passwordInput');
     const unlockBtn = document.getElementById('unlockBtn');
     const lockErrorMsg = document.getElementById('lockErrorMsg');
+    const gateOverlay = document.getElementById('gateOverlay');
+    const startExamBtn = document.getElementById('startExamBtn');
+
+    // Launch Request Fullscreen Mechanics
+    function activateFullScreen() {
+        const target = document.documentElement;
+        if (target.requestFullscreen) { target.requestFullscreen(); }
+        else if (target.webkitRequestFullscreen) { target.webkitRequestFullscreen(); }
+        else if (target.mozRequestFullScreen) { target.mozRequestFullScreen(); }
+        else if (target.msRequestFullscreen) { target.msRequestFullscreen(); }
+    }
+
+    startExamBtn.addEventListener('click', () => {
+        activateFullScreen();
+        gateOverlay.style.display = 'none';
+        proctorGridActive = true;
+    });
 
     function lockPage(reason = "generic") {
-        if (isLocked) return;
+        if (isLocked || !proctorGridActive) return;
         isLocked = true;
         document.body.classList.add('locked');
         lockOverlay.style.display = 'flex';
@@ -580,6 +614,7 @@
             lockOverlay.style.display = 'none';
             lockErrorMsg.innerText = '';
             localStorage.removeItem('worksheet_status_7th');
+            activateFullScreen(); // Re-engage full screen upon approval
         } else {
             lockErrorMsg.innerText = '❌ Incorrect password. Access denied.';
             passwordInput.value = '';
@@ -589,20 +624,51 @@
     unlockBtn.addEventListener('click', unlockPage);
     passwordInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') unlockPage(); });
 
-    // Anti-cheat Triggers
-    document.oncontextmenu = () => { alert("Right-click disabled"); return false; };
-
-    document.addEventListener("visibilitychange", () => {
-        if (document.hidden && hasAnswersBeforeLeave && !isLocked) {
-            lockPage('Tab leave caught');
-            alert("Activity Locked: You switched tabs or minimized the page.");
+    // 1. Prevent Exiting Full Screen Tracking
+    document.addEventListener('fullscreenchange', () => {
+        if (!document.fullscreenElement && proctorGridActive && !localStorage.getItem('worksheet_permanently_submitted')) {
+            lockPage('Fullscreen left');
+        }
+    });
+    document.addEventListener('webkitfullscreenchange', () => {
+        if (!document.webkitFullscreenElement && proctorGridActive && !localStorage.getItem('worksheet_permanently_submitted')) {
+            lockPage('Fullscreen left');
         }
     });
 
+    // 2. Clipboard Blockers (Block Select, Copy, Cut, Paste)
+    document.addEventListener('copy', (e) => e.preventDefault());
+    document.addEventListener('cut', (e) => e.preventDefault());
+    document.addEventListener('paste', (e) => e.preventDefault());
+    document.addEventListener('selectstart', (e) => e.preventDefault());
+    document.oncontextmenu = () => { alert("Context operations disabled."); return false; };
+
+    // 3. Prohibit Tab-Change / Focus Exit
+    document.addEventListener("visibilitychange", () => {
+        if (document.hidden && hasAnswersBeforeLeave && !isLocked) {
+            lockPage('Tab focus left');
+        }
+    });
     window.addEventListener("blur", function() {
         if (!isLocked && hasAnswersBeforeLeave) {
-            lockPage('Window lost focus');
-            alert("Activity Locked: Window lost focus.");
+            lockPage('Focus blurred');
+        }
+    });
+
+    // 4. Intercept Page Reload / Navigation Attempts
+    window.addEventListener('beforeunload', function (e) {
+        if (hasAnswersBeforeLeave && !localStorage.getItem('worksheet_permanently_submitted')) {
+            e.preventDefault();
+            e.returnValue = 'Warning: You are in an active examination sequence. Progress will be destroyed.';
+            return e.returnValue;
+        }
+    });
+
+    // DevTools & Refresh Key Blockers
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J')) || (e.ctrlKey && e.key === 'u') || (e.ctrlKey && e.key === 'r') || (e.metaKey && e.key === 'r')) {
+            e.preventDefault();
+            return false;
         }
     });
 
@@ -623,14 +689,8 @@
 
     window.addEventListener('load', function() {
         if (localStorage.getItem('worksheet_status_7th') === 'locked') {
-            lockPage('Persisted state match');
-        }
-    });
-
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J')) || (e.ctrlKey && e.key === 'u')) {
-            e.preventDefault();
-            return false;
+            gateOverlay.style.display = 'none';
+            lockPage('Persisted lock validation');
         }
     });
 
@@ -642,101 +702,4 @@
         act1_q4: /(world|international)/i
     };
 
-    const act2Keys = { act2_q1: 'T', act2_q2: 'F', act2_q3: 'T', act2_q4: 'F', act2_q5: 'T' };
-
-    const act3Keys = {
-        act3_q2: /(22000|22,000|thousand)/i,
-        act3_q3: /(island|islands)/i,
-        act3_q4: /(valleys|gorges|mountains)/i,
-        act3_q5: /(walking|traveling|travelling)/i,
-        act3_q6: /(thousands|hundreds)/i,
-        act3_q7: /(spanish|castilian)/i,
-        act3_q8: /(1999)/i,
-        act3_q9: /(2009)/i,
-        act3_q10: /(tourists|visitors)/i
-    };
-
-    function processGrading() {
-        let score = 0;
-
-        // Activity 1
-        let a1Score = 0;
-        for (let id in act1Keys) {
-            let val = document.getElementById(id).value.trim();
-            if (act1Keys[id].test(val)) a1Score++;
-        }
-        score += a1Score;
-
-        // Activity 2
-        let a2Score = 0;
-        for (let i = 1; i <= 5; i++) {
-            let rad = document.querySelector(`input[name="act2_q${i}"]:checked`);
-            if (rad && rad.value === act2Keys[`act2_q${i}`]) a2Score++;
-        }
-        score += a2Score;
-
-        // Activity 3
-        let a3Score = 0;
-        for (let id in act3Keys) {
-            let val = document.getElementById(id).value.trim();
-            if (act3Keys[id].test(val)) a3Score++;
-        }
-        score += a3Score;
-
-        // Store permanent submission state
-        localStorage.setItem('worksheet_permanently_submitted', 'true');
-
-        alert(`📊 EVALUATION COMPLETED\n\nTotal Score: ${score} / 18\n\n- Activity 1: ${a1Score}/4\n- Activity 2: ${a2Score}/5\n- Activity 3: ${a3Score}/9\n\nClick OK to terminate this session securely.`);
-
-        window.open('', '_self', '');
-        window.close();
-
-        // Fallback interface with verification gateway if browser blocks immediate windows close
-        document.documentElement.innerHTML = `
-        <head>
-            <title>Submitted</title>
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        </head>
-        <body style="background:#0b0f19;color:#4ade80;display:flex;flex-direction:column;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;padding:20px;text-align:center;">
-            <h2>✅ Score Logged Successfully</h2>
-            <p style="color:#a0aec0;margin-top:10px;margin-bottom:30px;">The evaluation session has been locked. This tab can be closed safely.</p>
-            
-            <div style="background:#161b26; padding:20px 30px; border-radius:20px; border:1px solid #242b3d; box-shadow:0 10px 25px rgba(0,0,0,0.4);">
-                <p style="color:#e2e8f0; font-size:0.85rem; margin-bottom:12px; font-weight:bold;">🛠️ TEACHER AUTHORIZATION OVERRIDE:</p>
-                <input type="password" id="fallbackOverrideInput" placeholder="Enter password to reload" style="padding:10px 14px; border-radius:30px; border:1px solid #333f57; background:#1f2738; color:#fff; text-align:center; outline:none; margin-bottom:12px; width:100%; display:block; box-sizing:border-box;">
-                <button id="fallbackOverrideBtn" style="background:#2563eb; color:white; border:none; padding:10px 20px; border-radius:30px; cursor:pointer; font-weight:600; width:100%;">Clear Lock & Reload</button>
-            </div>
-        </body>`;
-
-        setTimeout(() => {
-            document.getElementById('fallbackOverrideBtn').addEventListener('click', () => {
-                if (document.getElementById('fallbackOverrideInput').value.trim() === "5533") {
-                    localStorage.removeItem('worksheet_permanently_submitted');
-                    localStorage.removeItem('worksheet_status_7th');
-                    sessionStorage.clear();
-                    window.location.reload();
-                } else {
-                    alert("❌ Incorrect teacher code.");
-                }
-            });
-        }, 50);
-    }
-
-    document.getElementById('checkAllBtn').addEventListener('click', processGrading);
-
-    document.getElementById('resetBtn').addEventListener('click', () => {
-        if (localStorage.getItem('worksheet_permanently_submitted') === 'true') return;
-        const inputs = document.querySelectorAll('input[type="text"]');
-        inputs.forEach(inp => inp.value = '');
-        for(let i=1; i<=5; i++) {
-            document.querySelectorAll(`input[name="act2_q${i}"]`).forEach(r => r.checked = false);
-        }
-        document.getElementById('act1Feedback').innerHTML = '';
-        document.getElementById('act2Feedback').innerHTML = '';
-        document.getElementById('act3Feedback').innerHTML = '';
-        document.getElementById('totalScoreArea').innerHTML = '📊 Total score: -- / 18';
-        updateAnswerFlag();
-    });
-</script>
-</body>
-</html>
+    const act2Keys = { act2_q1: 'T', act2_q2: 'F', act2
