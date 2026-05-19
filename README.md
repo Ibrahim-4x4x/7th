@@ -357,7 +357,7 @@
             // Post-render binding because the scripts inside standard strings lose bindings
             setTimeout(() => {
                 document.getElementById('overrideBtn').addEventListener('click', () => {
-                    if (document.getElementById('overrideInput').value.trim() === "5533") {
+                    if (document.getElementById('overrideInput').value.trim() === "0007") {
                         localStorage.removeItem('worksheet_permanently_submitted');
                         localStorage.removeItem('worksheet_status_7th');
                         sessionStorage.clear();
