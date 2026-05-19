@@ -17,19 +17,11 @@
             padding: 40px 20px;
             color: #1e2a3a;
             transition: filter 0.2s;
-            user-select: none;
-            -webkit-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
         }
 
-        input[type="text"], input[type="password"] {
-            user-select: text !important;
-            -webkit-user-select: text !important;
-        }
-
+        /* Blur overlay when locked */
         body.locked .worksheet-container {
-            filter: blur(8px);
+            filter: blur(5px);
             pointer-events: none;
             user-select: none;
         }
@@ -38,55 +30,48 @@
             display: flex;
         }
 
-        .lock-overlay, .gate-overlay {
+        .lock-overlay {
             display: none;
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(11, 15, 25, 0.95);
-            backdrop-filter: blur(12px);
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
             z-index: 10000;
             justify-content: center;
             align-items: center;
             font-family: 'Segoe UI', system-ui;
         }
 
-        .gate-overlay {
-            display: flex; 
-            background: #0f172a;
-        }
-
         .lock-card {
             background: white;
-            max-width: 480px;
+            max-width: 460px;
             width: 90%;
-            padding: 35px 30px;
-            border-radius: 32px;
+            padding: 32px 28px;
+            border-radius: 48px;
             text-align: center;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            animation: fadeInUp 0.3s ease;
+            box-shadow: 0 25px 45px rgba(0,0,0,0.3);
+            animation: fadeInUp 0.2s ease;
         }
 
         .lock-card h2 {
             font-size: 1.8rem;
             margin-bottom: 12px;
-            color: #dc2626;
+            color: #c4452c;
         }
 
         .lock-card p {
             margin-bottom: 24px;
-            color: #475569;
-            font-size: 0.95rem;
-            line-height: 1.6;
+            color: #2c3e4e;
         }
 
         .lock-card input {
             width: 100%;
             padding: 14px 18px;
             font-size: 1rem;
-            border: 2px solid #cbd5e1;
+            border: 2px solid #d4dee8;
             border-radius: 60px;
             margin-bottom: 18px;
             outline: none;
@@ -95,33 +80,30 @@
         }
 
         .lock-card input:focus {
-            border-color: #2563eb;
+            border-color: #1f5a7a;
         }
 
-        .lock-card button, .gate-card button {
-            background: #2563eb;
+        .lock-card button {
+            background: #1f5a7a;
             border: none;
             color: white;
             font-weight: bold;
-            padding: 14px 28px;
+            padding: 12px 24px;
             border-radius: 60px;
             font-size: 1rem;
             cursor: pointer;
             width: 100%;
-            transition: all 0.2s;
-            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+            transition: 0.1s;
         }
 
         .lock-card button:hover {
-            background: #1d4ed8;
-            transform: translateY(-1px);
+            background: #0f415b;
         }
 
         .error-msg {
-            color: #dc2626;
+            color: #d9534f;
             margin-top: 12px;
             font-size: 0.85rem;
-            font-weight: 600;
         }
 
         @keyframes fadeInUp {
@@ -342,12 +324,17 @@
         }
     </style>
     <script>
-        /* --- SECURITY INTERCEPTION ROOT --- */
-        function performClearReload() {
-            localStorage.removeItem('worksheet_permanently_submitted');
-            localStorage.removeItem('worksheet_status_7th');
-            sessionStorage.clear();
-            window.location.reload();
+        /* --- SECURE ANTI-HISTORY TRAP WITH TEACHER OVERRIDE RELOAD --- */
+        function triggerTeacherOverride() {
+            const enteredPass = document.getElementById('trapOverrideInput').value.trim();
+            if (enteredPass === "5533") {
+                localStorage.removeItem('worksheet_permanently_submitted');
+                localStorage.removeItem('worksheet_status_7th');
+                sessionStorage.clear();
+                window.location.reload();
+            } else {
+                alert("❌ Incorrect teacher code.");
+            }
         }
 
         if (localStorage.getItem('worksheet_permanently_submitted') === 'true') {
@@ -358,25 +345,31 @@
             </head>
             <body style="background:#0b0f19;color:#ff6b6b;display:flex;flex-direction:column;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;padding:20px;text-align:center;">
                 <h2>🔒 Access Terminated</h2>
-                <p style="color:#a0aec0;margin-top:10px;max-width:400px;line-height:1.5;">This exam has already been completed on this browser.</p>
+                <p style="color:#a0aec0;margin-top:10px;max-width:400px;line-height:1.5;">This evaluation session has already been completed and recorded. Re-entry is strictly prohibited.</p>
+                
                 <div style="margin-top:30px; background:#161b26; padding:20px 30px; border-radius:20px; border:1px solid #242b3d; box-shadow:0 10px 25px rgba(0,0,0,0.4);">
-                    <p style="color:#e2e8f0; font-size:0.85rem; margin-bottom:12px; font-weight:bold;">🛠️ TEACHER OVERRIDE:</p>
-                    <input type="password" id="overrideInput" placeholder="Enter code" style="padding:10px 14px; border-radius:30px; border:1px solid #333f57; background:#1f2738; color:#fff; text-align:center; outline:none; margin-bottom:12px; width:100%; display:block; box-sizing:border-box;">
+                    <p style="color:#e2e8f0; font-size:0.85rem; margin-bottom:12px; font-weight:bold;">🛠️ TEACHER AUTHORIZATION OVERRIDE:</p>
+                    <input type="password" id="overrideInput" placeholder="Enter password to reload" style="padding:10px 14px; border-radius:30px; border:1px solid #333f57; background:#1f2738; color:#fff; text-align:center; outline:none; margin-bottom:12px; width:100%; display:block; box-sizing:border-box;">
                     <button id="overrideBtn" style="background:#2563eb; color:white; border:none; padding:10px 20px; border-radius:30px; cursor:pointer; font-weight:600; width:100%;">Clear Lock & Reload</button>
                 </div>
             </body>`;
             
+            // Post-render binding because the scripts inside standard strings lose bindings
             setTimeout(() => {
                 document.getElementById('overrideBtn').addEventListener('click', () => {
                     if (document.getElementById('overrideInput').value.trim() === "5533") {
-                        performClearReload();
+                        localStorage.removeItem('worksheet_permanently_submitted');
+                        localStorage.removeItem('worksheet_status_7th');
+                        sessionStorage.clear();
+                        window.location.reload();
                     } else {
-                        alert("❌ Incorrect password.");
+                        alert("❌ Incorrect teacher code.");
                     }
                 });
             }, 50);
         }
 
+        // Continually loop history states to disable back-button session hijacking
         history.pushState(null, null, window.location.href);
         window.addEventListener('popstate', function () {
             history.pushState(null, null, window.location.href);
@@ -385,33 +378,25 @@
 </head>
 <body>
 
-<div id="gateOverlay" class="gate-overlay">
-    <div class="lock-card" style="max-width: 520px;">
-        <h2>🔒 Controlled Proctored Session</h2>
-        <p>Clicking the button below will lock your screen into **Full-Screen Mode** for the exam.</p>
-        <p style="font-size:0.8rem; color:#dc2626; font-weight:bold; margin-top:-10px;">⚠️ Leaving fullscreen or switching tabs will freeze your exam immediately.</p>
-        <button id="startExamBtn">🚀 Start Examination</button>
-    </div>
-</div>
-
 <div id="lockOverlay" class="lock-overlay">
     <div class="lock-card">
         <h2>🔒 Activity Locked</h2>
-        <p>⚠️ Anti-Cheat Triggered:<br>You left full-screen mode, resized the screen, or changed tabs.<br><br><b>Enter teacher password to unlock:</b></p>
-        <input type="password" id="passwordInput" placeholder="Teacher Code" autocomplete="off">
-        <button id="unlockBtn">Re-Verify & Resume</button>
+        <p>⚠️ You left the page, minimized the tab, completed the activity, or the window lost focus.<br>Enter teacher password to continue.</p>
+        <input type="password" id="passwordInput" placeholder="Enter password" autocomplete="off">
+        <button id="unlockBtn">Unlock Worksheet</button>
         <div id="lockErrorMsg" class="error-msg"></div>
     </div>
 </div>
 
 <div class="worksheet-container">
     <h1>📝 WOW! Culture — Lesson 8</h1>
-    <div class="sub">Non-verbal Communication & Global Languages | Unit 7</div>
+    <div class="sub">Non-verbal Communication & Global Languages | 🔐 Auto-Destruct History Framework Active</div>
 
     <div class="activity-card">
         <div class="activity-title">📖 1. After you read: Complete the sentences</div>
         <div class="activity-content">
             <div class="example-text">📌 Write <b>one word</b> in each gap based on your Pupil's Book page 38.</div>
+            
             <div class="field-row">
                 <span class="field-label">1️⃣</span>
                 <span class="sentence-text">We can <b>communicate</b> with each other <input type="text" id="act1_q1" class="inline-gap" placeholder="gap 1"> using any words.</span>
@@ -428,12 +413,15 @@
                 <span class="field-label">4️⃣</span>
                 <span class="sentence-text">The <input type="text" id="act1_q4" class="inline-gap" placeholder="gap 4"> Day of Sign Languages is on 23rd September.</span>
             </div>
+            <div id="act1Feedback" class="feedback"></div>
         </div>
     </div>
 
     <div class="activity-card">
         <div class="activity-title">✔️ 2. Read the sentences and circle T (True) or F (False)</div>
         <div class="activity-content">
+            <div class="example-text">📌 Select T or F, then write a brief explanation for your answer.</div>
+            
             <div class="sentence-item">
                 <div class="sentence-row-layout">
                     <div class="sentence-text">1️⃣ Some types of language use pictures instead of words.</div>
@@ -442,8 +430,9 @@
                         <label><input type="radio" name="act2_q1" value="F"> F</label>
                     </div>
                 </div>
-                <input type="text" id="act2_exp1" class="explanation-input" placeholder="Explanation...">
+                <input type="text" id="act2_exp1" class="explanation-input" placeholder="Explanation: Emojis and hieroglyphics use pictures.">
             </div>
+
             <div class="sentence-item">
                 <div class="sentence-row-layout">
                     <div class="sentence-text">2️⃣ Emojis aren't popular with 18-25-year-old people.</div>
@@ -452,8 +441,9 @@
                         <label><input type="radio" name="act2_q2" value="F"> F</label>
                     </div>
                 </div>
-                <input type="text" id="act2_exp2" class="explanation-input" placeholder="Explanation...">
+                <input type="text" id="act2_exp2" class="explanation-input" placeholder="Explain your answer...">
             </div>
+
             <div class="sentence-item">
                 <div class="sentence-row-layout">
                     <div class="sentence-text">3️⃣ Sad emojis aren't used as often as happy emojis.</div>
@@ -462,8 +452,9 @@
                         <label><input type="radio" name="act2_q3" value="F"> F</label>
                     </div>
                 </div>
-                <input type="text" id="act2_exp3" class="explanation-input" placeholder="Explanation...">
+                <input type="text" id="act2_exp3" class="explanation-input" placeholder="Explain your answer...">
             </div>
+
             <div class="sentence-item">
                 <div class="sentence-row-layout">
                     <div class="sentence-text">4️⃣ We can't understand what hieroglyphics mean.</div>
@@ -472,8 +463,9 @@
                         <label><input type="radio" name="act2_q4" value="F"> F</label>
                     </div>
                 </div>
-                <input type="text" id="act2_exp4" class="explanation-input" placeholder="Explanation...">
+                <input type="text" id="act2_exp4" class="explanation-input" placeholder="Explain your answer...">
             </div>
+
             <div class="sentence-item">
                 <div class="sentence-row-layout">
                     <div class="sentence-text">5️⃣ There is more than one type of sign language.</div>
@@ -482,8 +474,9 @@
                         <label><input type="radio" name="act2_q5" value="F"> F</label>
                     </div>
                 </div>
-                <input type="text" id="act2_exp5" class="explanation-input" placeholder="Explanation...">
+                <input type="text" id="act2_exp5" class="explanation-input" placeholder="Explain your answer...">
             </div>
+            <div id="act2Feedback" class="feedback"></div>
         </div>
     </div>
 
@@ -491,84 +484,86 @@
         <div class="activity-title">🎧 3. Listen to a report about Silbo Gomero: Complete the notes</div>
         <div class="activity-content">
             <div class="info-grid">
+                
                 <div class="student-card">
                     <h3>🗣️ Language Profile: Silbo Gomero</h3>
                     <ul>
-                        <li>• Type: Unusual whistling language used by <input type="text" id="act3_q2" class="inline-gap" style="width:80px;"> people.</li>
+                        <li>
+                            <span class="label-badge">• Type:</span> 
+                            <span>A very unusual whistling language now used by about <input type="text" id="act3_q2" class="inline-gap" style="width:70px;" placeholder="2"> people.</span>
+                        </li>
                     </ul>
                 </div>
+
                 <div class="student-card" style="border-left-color: #2a6f8f;">
                     <h3>📍 Place Used</h3>
                     <ul>
-                        <li>• Location: Used on the <input type="text" id="act3_q3" class="inline-gap"> of La Gomera.</li>
-                        <li>• Geography: Separated by deep mountain <input type="text" id="act3_q4" class="inline-gap">.</li>
-                        <li>• Advantage: Easier than <input type="text" id="act3_q5" class="inline-gap"> long distances.</li>
+                        <li>
+                            <span class="label-badge">• Location:</span> 
+                            <span>Used on the <input type="text" id="act3_q3" class="inline-gap" placeholder="3"> of La Gomera, which is part of Spain.</span>
+                        </li>
+                        <li>
+                            <span class="label-badge">• Geography:</span> 
+                            <span>In the mountains, where people are separated by <input type="text" id="act3_q4" class="inline-gap" placeholder="4">.</span>
+                        </li>
+                        <li>
+                            <span class="label-badge">• Advantage:</span> 
+                            <span>Easier than <input type="text" id="act3_q5" class="inline-gap" placeholder="5"> long distances to speak with people.</span>
+                        </li>
                     </ul>
                 </div>
+
                 <div class="student-card" style="border-left-color: #2c6e2c;">
                     <h3>⏳ History & Status</h3>
                     <ul>
-                        <li>• Origins: Used by Guanches for <input type="text" id="act3_q6" class="inline-gap"> of years.</li>
-                        <li>• Evolution: Changed to communicate the <input type="text" id="act3_q7" class="inline-gap"> language.</li>
-                        <li>• School: Became an official subject in <input type="text" id="act3_q8" class="inline-gap">.</li>
-                        <li>• UNESCO: Honored by UNESCO in <input type="text" id="act3_q9" class="inline-gap">.</li>
-                        <li>• Modern Day: Popular with <input type="text" id="act3_q10" class="inline-gap">.</li>
+                        <li>
+                            <span class="label-badge">• Origins:</span> 
+                            <span>Used by the Guanches people for <input type="text" id="act3_q6" class="inline-gap" placeholder="6"> of years.</span>
+                        </li>
+                        <li>
+                            <span class="label-badge">• Evolution:</span> 
+                            <span>Changed later to communicate the <input type="text" id="act3_q7" class="inline-gap" placeholder="7"> language.</span>
+                        </li>
+                        <li>
+                            <span class="label-badge">• Education:</span> 
+                            <span>Became an official school subject on La Gomera in <input type="text" id="act3_q8" class="inline-gap" placeholder="8">.</span>
+                        </li>
+                        <li>
+                            <span class="label-badge">• UNESCO:</span> 
+                            <span>Recognised as a World Heritage language by UNESCO in <input type="text" id="act3_q9" class="inline-gap" placeholder="9">.</span>
+                        </li>
+                        <li>
+                            <span class="label-badge">• Modern Day:</span> 
+                            <span>Now popular with <input type="text" id="act3_q10" class="inline-gap" placeholder="10"> who come to La Gomera to hear it.</span>
+                        </li>
                     </ul>
                 </div>
+
             </div>
+            <div id="act3Feedback" class="feedback"></div>
         </div>
     </div>
 
     <div style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap;">
         <button class="btn-check" id="checkAllBtn">✅ Auto-Correct & Score</button>
-        <button class="btn-check" id="resetBtn" style="background: #5e7c8c;">⟳ Reset fields</button>
+        <button class="btn-check" id="resetBtn" style="background: #5e7c8c;">⟳ Reset all answers</button>
     </div>
     <div id="totalScoreArea" class="score-area">📊 Total score: -- / 18</div>
 </div>
 
 <script>
+    /* --- SECURITY SUBSYSTEM --- */
     const TEACHER_PASSWORD = "5533";
     let isLocked = false;
     let hasAnswersBeforeLeave = false;
-    let proctorGridActive = false;
-    let fallbackModeActive = false; // Flag if system blocks fullscreen requests
 
     const lockOverlay = document.getElementById('lockOverlay');
     const passwordInput = document.getElementById('passwordInput');
     const unlockBtn = document.getElementById('unlockBtn');
     const lockErrorMsg = document.getElementById('lockErrorMsg');
-    const gateOverlay = document.getElementById('gateOverlay');
-    const startExamBtn = document.getElementById('startExamBtn');
 
-    function activateFullScreen() {
-        if (fallbackModeActive) return;
-        const target = document.documentElement;
-        try {
-            if (target.requestFullscreen) { target.requestFullscreen(); }
-            else if (target.webkitRequestFullscreen) { target.webkitRequestFullscreen(); }
-            else if (target.mozRequestFullScreen) { target.mozRequestFullScreen(); }
-            else if (target.msRequestFullscreen) { target.msRequestFullscreen(); }
-        } catch (err) {
-            console.warn("Fullscreen permission denied by environment. Entering fallback mode.");
-            fallbackModeActive = true;
-        }
-    }
-
-    startExamBtn.addEventListener('click', () => {
-        activateFullScreen();
-        gateOverlay.style.display = 'none';
-        proctorGridActive = true;
-        // Short timeout verification to check if fullscreen was completely denied or blocked
-        setTimeout(() => {
-            if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-                fallbackModeActive = true;
-                alert("📢 Notice: Your environment blocks full-screen apps. Anti-tab tracking remains fully operational.");
-            }
-        }, 400);
-    });
-
-    function lockPage() {
-        if (isLocked || !proctorGridActive) return;
+    function lockPage(reason = "generic") {
+        if (isLocked) return;
         isLocked = true;
         document.body.classList.add('locked');
         lockOverlay.style.display = 'flex';
@@ -585,9 +580,8 @@
             lockOverlay.style.display = 'none';
             lockErrorMsg.innerText = '';
             localStorage.removeItem('worksheet_status_7th');
-            if (!fallbackModeActive) { activateFullScreen(); }
         } else {
-            lockErrorMsg.innerText = '❌ Incorrect password.';
+            lockErrorMsg.innerText = '❌ Incorrect password. Access denied.';
             passwordInput.value = '';
         }
     }
@@ -595,38 +589,154 @@
     unlockBtn.addEventListener('click', unlockPage);
     passwordInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') unlockPage(); });
 
-    // Watchers for Fullscreen Changes
-    function monitorFullscreen() {
-        if (fallbackModeActive || !proctorGridActive) return;
-        if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-            if (hasAnswersBeforeLeave) lockPage();
-        }
-    }
-    document.addEventListener('fullscreenchange', monitorFullscreen);
-    document.addEventListener('webkitfullscreenchange', monitorFullscreen);
+    // Anti-cheat Triggers
+    document.oncontextmenu = () => { alert("Right-click disabled"); return false; };
 
-    // Clipboard Blocker Sequences
-    document.addEventListener('copy', (e) => e.preventDefault());
-    document.addEventListener('cut', (e) => e.preventDefault());
-    document.addEventListener('paste', (e) => e.preventDefault());
-    document.addEventListener('selectstart', (e) => e.preventDefault());
-    document.oncontextmenu = () => false;
-
-    // Standard Tab Switching Triggers
     document.addEventListener("visibilitychange", () => {
-        if (document.hidden && hasAnswersBeforeLeave) lockPage();
-    });
-    window.addEventListener("blur", function() {
-        if (hasAnswersBeforeLeave) lockPage();
+        if (document.hidden && hasAnswersBeforeLeave && !isLocked) {
+            lockPage('Tab leave caught');
+            alert("Activity Locked: You switched tabs or minimized the page.");
+        }
     });
 
-    window.addEventListener('beforeunload', function (e) {
-        if (hasAnswersBeforeLeave && !localStorage.getItem('worksheet_permanently_submitted')) {
-            e.preventDefault();
-            e.returnValue = 'Warning: Active Exam Mode.';
-            return e.returnValue;
+    window.addEventListener("blur", function() {
+        if (!isLocked && hasAnswersBeforeLeave) {
+            lockPage('Window lost focus');
+            alert("Activity Locked: Window lost focus.");
+        }
+    });
+
+    function checkAnyAnswer() {
+        for (let i = 1; i <= 5; i++) {
+            if (document.querySelector(`input[name="act2_q${i}"]:checked`)) return true;
+        }
+        const inputs = document.querySelectorAll('input[type="text"]');
+        for (let inp of inputs) {
+            if (inp.value.trim() !== "") return true;
+        }
+        return false;
+    }
+
+    function updateAnswerFlag() { hasAnswersBeforeLeave = checkAnyAnswer(); }
+    document.addEventListener('change', updateAnswerFlag);
+    document.addEventListener('input', updateAnswerFlag);
+
+    window.addEventListener('load', function() {
+        if (localStorage.getItem('worksheet_status_7th') === 'locked') {
+            lockPage('Persisted state match');
         }
     });
 
     document.addEventListener('keydown', function(e) {
-        if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J')) || (e.ctrlKey && e.key
+        if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J')) || (e.ctrlKey && e.key === 'u')) {
+            e.preventDefault();
+            return false;
+        }
+    });
+
+    /* --- ANSWER KEYS & GRADING --- */
+    const act1Keys = {
+        act1_q1: /without/i,
+        act1_q2: /(pictures|symbols|emojis)/i,
+        act1_q3: /(picture|written|hieroglyphic)/i,
+        act1_q4: /(world|international)/i
+    };
+
+    const act2Keys = { act2_q1: 'T', act2_q2: 'F', act2_q3: 'T', act2_q4: 'F', act2_q5: 'T' };
+
+    const act3Keys = {
+        act3_q2: /(22000|22,000|thousand)/i,
+        act3_q3: /(island|islands)/i,
+        act3_q4: /(valleys|gorges|mountains)/i,
+        act3_q5: /(walking|traveling|travelling)/i,
+        act3_q6: /(thousands|hundreds)/i,
+        act3_q7: /(spanish|castilian)/i,
+        act3_q8: /(1999)/i,
+        act3_q9: /(2009)/i,
+        act3_q10: /(tourists|visitors)/i
+    };
+
+    function processGrading() {
+        let score = 0;
+
+        // Activity 1
+        let a1Score = 0;
+        for (let id in act1Keys) {
+            let val = document.getElementById(id).value.trim();
+            if (act1Keys[id].test(val)) a1Score++;
+        }
+        score += a1Score;
+
+        // Activity 2
+        let a2Score = 0;
+        for (let i = 1; i <= 5; i++) {
+            let rad = document.querySelector(`input[name="act2_q${i}"]:checked`);
+            if (rad && rad.value === act2Keys[`act2_q${i}`]) a2Score++;
+        }
+        score += a2Score;
+
+        // Activity 3
+        let a3Score = 0;
+        for (let id in act3Keys) {
+            let val = document.getElementById(id).value.trim();
+            if (act3Keys[id].test(val)) a3Score++;
+        }
+        score += a3Score;
+
+        // Store permanent submission state
+        localStorage.setItem('worksheet_permanently_submitted', 'true');
+
+        alert(`📊 EVALUATION COMPLETED\n\nTotal Score: ${score} / 18\n\n- Activity 1: ${a1Score}/4\n- Activity 2: ${a2Score}/5\n- Activity 3: ${a3Score}/9\n\nClick OK to terminate this session securely.`);
+
+        window.open('', '_self', '');
+        window.close();
+
+        // Fallback interface with verification gateway if browser blocks immediate windows close
+        document.documentElement.innerHTML = `
+        <head>
+            <title>Submitted</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="background:#0b0f19;color:#4ade80;display:flex;flex-direction:column;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;padding:20px;text-align:center;">
+            <h2>✅ Score Logged Successfully</h2>
+            <p style="color:#a0aec0;margin-top:10px;margin-bottom:30px;">The evaluation session has been locked. This tab can be closed safely.</p>
+            
+            <div style="background:#161b26; padding:20px 30px; border-radius:20px; border:1px solid #242b3d; box-shadow:0 10px 25px rgba(0,0,0,0.4);">
+                <p style="color:#e2e8f0; font-size:0.85rem; margin-bottom:12px; font-weight:bold;">🛠️ TEACHER AUTHORIZATION OVERRIDE:</p>
+                <input type="password" id="fallbackOverrideInput" placeholder="Enter password to reload" style="padding:10px 14px; border-radius:30px; border:1px solid #333f57; background:#1f2738; color:#fff; text-align:center; outline:none; margin-bottom:12px; width:100%; display:block; box-sizing:border-box;">
+                <button id="fallbackOverrideBtn" style="background:#2563eb; color:white; border:none; padding:10px 20px; border-radius:30px; cursor:pointer; font-weight:600; width:100%;">Clear Lock & Reload</button>
+            </div>
+        </body>`;
+
+        setTimeout(() => {
+            document.getElementById('fallbackOverrideBtn').addEventListener('click', () => {
+                if (document.getElementById('fallbackOverrideInput').value.trim() === "5533") {
+                    localStorage.removeItem('worksheet_permanently_submitted');
+                    localStorage.removeItem('worksheet_status_7th');
+                    sessionStorage.clear();
+                    window.location.reload();
+                } else {
+                    alert("❌ Incorrect teacher code.");
+                }
+            });
+        }, 50);
+    }
+
+    document.getElementById('checkAllBtn').addEventListener('click', processGrading);
+
+    document.getElementById('resetBtn').addEventListener('click', () => {
+        if (localStorage.getItem('worksheet_permanently_submitted') === 'true') return;
+        const inputs = document.querySelectorAll('input[type="text"]');
+        inputs.forEach(inp => inp.value = '');
+        for(let i=1; i<=5; i++) {
+            document.querySelectorAll(`input[name="act2_q${i}"]`).forEach(r => r.checked = false);
+        }
+        document.getElementById('act1Feedback').innerHTML = '';
+        document.getElementById('act2Feedback').innerHTML = '';
+        document.getElementById('act3Feedback').innerHTML = '';
+        document.getElementById('totalScoreArea').innerHTML = '📊 Total score: -- / 18';
+        updateAnswerFlag();
+    });
+</script>
+</body>
+</html>
