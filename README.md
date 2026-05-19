@@ -327,7 +327,7 @@
         /* --- SECURE ANTI-HISTORY TRAP WITH TEACHER OVERRIDE RELOAD --- */
         function triggerTeacherOverride() {
             const enteredPass = document.getElementById('trapOverrideInput').value.trim();
-            if (enteredPass === "5533") {
+            if (enteredPass === "0007") {
                 localStorage.removeItem('worksheet_permanently_submitted');
                 localStorage.removeItem('worksheet_status_7th');
                 sessionStorage.clear();
