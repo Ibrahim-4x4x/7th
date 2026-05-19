@@ -1,4 +1,4 @@
-<!--DOCTYPE html-->
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -324,14 +324,52 @@
         }
     </style>
     <script>
-        /* --- SECURE ANTI-HISTORY TRAP (RUNS IMMEDIATELY BEFORE DOM LOADS) --- */
-        if (localStorage.getItem('worksheet_permanently_submitted') === 'true') {
-            document.documentElement.innerHTML = '<head><title>Access Denied</title></head><body style="background:#0b0f19;color:#ff6b6b;display:flex;flex-direction:column;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;padding:20px;text-align:center;"><h2>🔒 Access Terminated</h2><p style="color:#a0aec0;margin-top:10px;">This evaluation session has already been completed and sent to history. Re-entry is strictly prohibited.</p></body>';
-            window.close();
-            setTimeout(() => { while(true){} }, 100); // Absolute fallback lock to freeze browser tab if close is intercepted
+        /* --- SECURE ANTI-HISTORY TRAP WITH TEACHER OVERRIDE RELOAD --- */
+        function triggerTeacherOverride() {
+            const enteredPass = document.getElementById('trapOverrideInput').value.trim();
+            if (enteredPass === "5533") {
+                localStorage.removeItem('worksheet_permanently_submitted');
+                localStorage.removeItem('worksheet_status_7th');
+                sessionStorage.clear();
+                window.location.reload();
+            } else {
+                alert("❌ Incorrect teacher code.");
+            }
         }
 
-        // Continually corrupt the forward/backward history state to prevent back-arrow traversal
+        if (localStorage.getItem('worksheet_permanently_submitted') === 'true') {
+            document.documentElement.innerHTML = `
+            <head>
+                <title>Access Denied</title>
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            </head>
+            <body style="background:#0b0f19;color:#ff6b6b;display:flex;flex-direction:column;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;padding:20px;text-align:center;">
+                <h2>🔒 Access Terminated</h2>
+                <p style="color:#a0aec0;margin-top:10px;max-width:400px;line-height:1.5;">This evaluation session has already been completed and recorded. Re-entry is strictly prohibited.</p>
+                
+                <div style="margin-top:30px; background:#161b26; padding:20px 30px; border-radius:20px; border:1px solid #242b3d; box-shadow:0 10px 25px rgba(0,0,0,0.4);">
+                    <p style="color:#e2e8f0; font-size:0.85rem; margin-bottom:12px; font-weight:bold;">🛠️ TEACHER AUTHORIZATION OVERRIDE:</p>
+                    <input type="password" id="overrideInput" placeholder="Enter password to reload" style="padding:10px 14px; border-radius:30px; border:1px solid #333f57; background:#1f2738; color:#fff; text-align:center; outline:none; margin-bottom:12px; width:100%; display:block; box-sizing:border-box;">
+                    <button id="overrideBtn" style="background:#2563eb; color:white; border:none; padding:10px 20px; border-radius:30px; cursor:pointer; font-weight:600; width:100%;">Clear Lock & Reload</button>
+                </div>
+            </body>`;
+            
+            // Post-render binding because the scripts inside standard strings lose bindings
+            setTimeout(() => {
+                document.getElementById('overrideBtn').addEventListener('click', () => {
+                    if (document.getElementById('overrideInput').value.trim() === "5533") {
+                        localStorage.removeItem('worksheet_permanently_submitted');
+                        localStorage.removeItem('worksheet_status_7th');
+                        sessionStorage.clear();
+                        window.location.reload();
+                    } else {
+                        alert("❌ Incorrect teacher code.");
+                    }
+                });
+            }, 50);
+        }
+
+        // Continually loop history states to disable back-button session hijacking
         history.pushState(null, null, window.location.href);
         window.addEventListener('popstate', function () {
             history.pushState(null, null, window.location.href);
@@ -589,7 +627,6 @@
         }
     });
 
-    // DevTools blocker
     document.addEventListener('keydown', function(e) {
         if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J')) || (e.ctrlKey && e.key === 'u')) {
             e.preventDefault();
@@ -646,18 +683,43 @@
         }
         score += a3Score;
 
-        // Set persistent locked state in storage so history retrieval/reloads cannot clean it
+        // Store permanent submission state
         localStorage.setItem('worksheet_permanently_submitted', 'true');
 
-        // Output results to native window dialog prompt
-        alert(`📊 EVALUATION COMPLETED\n\nTotal Score: ${score} / 18\n\n- Activity 1: ${a1Score}/4\n- Activity 2: ${a2Score}/5\n- Activity 3: ${a3Score}/9\n\nClick OK to close this application securely.`);
+        alert(`📊 EVALUATION COMPLETED\n\nTotal Score: ${score} / 18\n\n- Activity 1: ${a1Score}/4\n- Activity 2: ${a2Score}/5\n- Activity 3: ${a3Score}/9\n\nClick OK to terminate this session securely.`);
 
-        // Force terminate/Close Window sequence
         window.open('', '_self', '');
         window.close();
 
-        // Anti-history fallback layout injection if browser environment blocks program window close
-        document.documentElement.innerHTML = '<head><title>Submitted</title></head><body style="background:#0b0f19;color:#4ade80;display:flex;flex-direction:column;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;padding:20px;text-align:center;"><h2>✅ Score Logged Successfully</h2><p style="color:#a0aec0;margin-top:10px;">The evaluation session has been destroyed. This tab can be closed safely.</p></body>';
+        // Fallback interface with verification gateway if browser blocks immediate windows close
+        document.documentElement.innerHTML = `
+        <head>
+            <title>Submitted</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="background:#0b0f19;color:#4ade80;display:flex;flex-direction:column;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;padding:20px;text-align:center;">
+            <h2>✅ Score Logged Successfully</h2>
+            <p style="color:#a0aec0;margin-top:10px;margin-bottom:30px;">The evaluation session has been locked. This tab can be closed safely.</p>
+            
+            <div style="background:#161b26; padding:20px 30px; border-radius:20px; border:1px solid #242b3d; box-shadow:0 10px 25px rgba(0,0,0,0.4);">
+                <p style="color:#e2e8f0; font-size:0.85rem; margin-bottom:12px; font-weight:bold;">🛠️ TEACHER AUTHORIZATION OVERRIDE:</p>
+                <input type="password" id="fallbackOverrideInput" placeholder="Enter password to reload" style="padding:10px 14px; border-radius:30px; border:1px solid #333f57; background:#1f2738; color:#fff; text-align:center; outline:none; margin-bottom:12px; width:100%; display:block; box-sizing:border-box;">
+                <button id="fallbackOverrideBtn" style="background:#2563eb; color:white; border:none; padding:10px 20px; border-radius:30px; cursor:pointer; font-weight:600; width:100%;">Clear Lock & Reload</button>
+            </div>
+        </body>`;
+
+        setTimeout(() => {
+            document.getElementById('fallbackOverrideBtn').addEventListener('click', () => {
+                if (document.getElementById('fallbackOverrideInput').value.trim() === "5533") {
+                    localStorage.removeItem('worksheet_permanently_submitted');
+                    localStorage.removeItem('worksheet_status_7th');
+                    sessionStorage.clear();
+                    window.location.reload();
+                } else {
+                    alert("❌ Incorrect teacher code.");
+                }
+            });
+        }, 50);
     }
 
     document.getElementById('checkAllBtn').addEventListener('click', processGrading);
