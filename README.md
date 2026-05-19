@@ -553,7 +553,7 @@
 
 <script>
     /* --- SECURITY SUBSYSTEM --- */
-    const TEACHER_PASSWORD = "5533";
+    const TEACHER_PASSWORD = "0007";
     let isLocked = false;
     let hasAnswersBeforeLeave = false;
 
