@@ -2,7 +2,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>🔒 Secure Worksheet: WOW! Culture (Unit 7)</title>
+    <title>🔒 Secure Worksheet: WOW! Culture (Unit 7) + Google Sheets Lock</title>
     <style>
         * {
             margin: 0;
@@ -10,36 +10,34 @@
             box-sizing: border-box;
         }
 
-        /* HARD LOCK: Prevent text selection and highlighting across all browsers */
         body {
             background: #eef2f5;
             font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
             padding: 40px 20px;
             color: #1e2a3a;
-            transition: filter 0.2s;
-            -webkit-user-select: none;  /* Safari */
-            -moz-user-select: none;     /* Firefox */
-            -ms-user-select: none;      /* IE10+ */
-            user-select: none;          /* Standard */
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
         }
 
-        /* ANTI-PRINT WEAPON: If they try to print or save to PDF, the screen goes completely blank */
         @media print {
             body { display: none !important; }
         }
 
-        /* Blur overlay when locked */
-        body.locked .worksheet-container {
+        body.locked .worksheet-container,
+        body.sheet-locked .worksheet-container {
             filter: blur(5px);
             pointer-events: none;
             user-select: none;
         }
 
-        body.locked .lock-overlay {
+        body.locked .lock-overlay,
+        body.sheet-locked .sheet-lock-overlay {
             display: flex;
         }
 
-        .lock-overlay {
+        .lock-overlay, .sheet-lock-overlay {
             display: none;
             position: fixed;
             top: 0;
@@ -54,7 +52,7 @@
             font-family: 'Segoe UI', system-ui;
         }
 
-        .lock-card {
+        .lock-card, .sheet-lock-card {
             background: white;
             max-width: 460px;
             width: 90%;
@@ -65,18 +63,20 @@
             animation: fadeInUp 0.2s ease;
         }
 
+        .sheet-lock-card h2 {
+            color: #d9534f;
+        }
+
         .lock-card h2 {
-            font-size: 1.8rem;
-            margin-bottom: 12px;
             color: #c4452c;
         }
 
-        .lock-card p {
+        .lock-card p, .sheet-lock-card p {
             margin-bottom: 24px;
             color: #2c3e4e;
         }
 
-        .lock-card input {
+        .lock-card input, .sheet-lock-card input {
             width: 100%;
             padding: 14px 18px;
             font-size: 1rem;
@@ -85,14 +85,9 @@
             margin-bottom: 18px;
             outline: none;
             text-align: center;
-            letter-spacing: 1px;
         }
 
-        .lock-card input:focus {
-            border-color: #1f5a7a;
-        }
-
-        .lock-card button {
+        .lock-card button, .sheet-lock-card button {
             background: #1f5a7a;
             border: none;
             color: white;
@@ -102,11 +97,6 @@
             font-size: 1rem;
             cursor: pointer;
             width: 100%;
-            transition: 0.1s;
-        }
-
-        .lock-card button:hover {
-            background: #0f415b;
         }
 
         .error-msg {
@@ -129,6 +119,52 @@
             overflow: hidden;
             padding: 30px 35px 45px;
             transition: all 0.2s;
+        }
+
+        .student-auth-area {
+            background: #f0f7fc;
+            border-radius: 28px;
+            padding: 20px 28px;
+            margin-bottom: 30px;
+            border: 1px solid #cde1ec;
+            text-align: center;
+        }
+
+        .student-auth-area input {
+            padding: 12px 20px;
+            font-size: 1rem;
+            border-radius: 40px;
+            border: 1px solid #cbdde9;
+            width: 260px;
+            margin: 10px 8px;
+        }
+
+        .student-auth-area button {
+            background: #1f5a7a;
+            color: white;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 40px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .auth-error {
+            color: #c0392b;
+            margin-top: 12px;
+            font-size: 0.85rem;
+        }
+
+        .workspace-content {
+            display: none;
+        }
+
+        body.authenticated .workspace-content {
+            display: block;
+        }
+
+        body.authenticated .student-auth-area {
+            display: none;
         }
 
         h1 {
@@ -333,12 +369,56 @@
         }
     </style>
     <script>
+        /* ===================== GOOGLE SHEETS INTEGRATION ===================== */
+        // 🔁 قم بتغيير هذا الرابط بعد نشر Google Apps Script (doPost)
+// 🔁 ضع الرابط الذي نسخته من الخطوة 9 هنا:
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw3KEwFFzzZyJP-pETrU2wWN9J5aWtZ4tdKwECKBD8UDGW5wEUInQQkxLyzonRyDOFXQw/exec"; 
+        
+        let globalStudentId = "";
+        let globalStudentName = ""; // متغير جديد للاسم
+        let startTime; // متغير لحساب وقت البدء
+        
+        async function checkStudentInSheet(studentId) {
+            try {
+                const response = await fetch(SCRIPT_URL, {
+                    method: "POST",
+                    // استخدام text/plain يمنع أخطاء CORS مع Google Apps Script
+                    headers: { "Content-Type": "text/plain;charset=utf-8" }, 
+                    body: JSON.stringify({ action: "check", studentId: studentId })
+                });
+                const data = await response.json();
+                return data.exists === true;
+            } catch(err) {
+                console.warn("Sheet check failed", err);
+                return false; 
+            }
+        }
+        
+        async function saveResultToSheet(studentId, studentName, score, timeSpent) {
+            try {
+                await fetch(SCRIPT_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "text/plain;charset=utf-8" },
+                    body: JSON.stringify({ 
+                        action: "save", 
+                        studentId: studentId, 
+                        studentName: studentName,
+                        score: score,
+                        timeSpent: timeSpent
+                    })
+                });
+                return true;
+            } catch(err) {
+                console.error("Failed to save", err);
+                return false;
+            }
+        }
+        
         /* --- HIGH-SECURITY DEEP STORAGE LOCKING ENGINE (INDEXEDDB) --- */
-        // Standard history clearing clears localStorage, but routinely skips system IndexedDB instances.
         const DB_NAME = "SecuritySubsystem7th";
         const STORE_NAME = "SessionLocks";
         let db;
-
+        
         function initSecurityDB() {
             return new Promise((resolve) => {
                 let request = indexedDB.open(DB_NAME, 1);
@@ -355,7 +435,7 @@
                 request.onerror = function() { resolve(false); };
             });
         }
-
+        
         function readPermanentLock() {
             return new Promise((resolve) => {
                 if (!db) { resolve(false); return; }
@@ -368,92 +448,83 @@
                 getRequest.onerror = function() { resolve(false); };
             });
         }
-
+        
         function writePermanentLock() {
             if (!db) return;
             let transaction = db.transaction([STORE_NAME], "readwrite");
             let store = transaction.objectStore(STORE_NAME);
             store.put("true", "permanently_submitted");
         }
-
+        
         function clearPermanentLock() {
             if (!db) return;
             let transaction = db.transaction([STORE_NAME], "readwrite");
             let store = transaction.objectStore(STORE_NAME);
             store.delete("permanently_submitted");
         }
-
-        // Execute lockdown check instantly before document rendering
+        
+        // التحقق الأساسي عند التحميل (IDB + localStorage + Google Sheets)
         async function runEnforcementCheck() {
             await initSecurityDB();
             const idbLocked = await readPermanentLock();
             const lsLocked = localStorage.getItem('worksheet_permanently_submitted') === 'true';
-
+            
+            // إذا كان هناك قفل محلي -> منع فوري
             if (lsLocked || idbLocked) {
-                // Force a sync repair if one database was cleared but the other survived
                 localStorage.setItem('worksheet_permanently_submitted', 'true');
                 writePermanentLock();
-
-                document.documentElement.innerHTML = `
-                <head>
-                    <title>Access Denied</title>
-                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                    <style>body { -webkit-user-select:none; user-select:none; }</style>
-                </head>
-                <body style="background:#0b0f19;color:#ff6b6b;display:flex;flex-direction:column;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;padding:20px;text-align:center;">
-                    <h2>🔒 Access Terminated</h2>
-                    <p style="color:#a0aec0;margin-top:10px;max-width:400px;line-height:1.5;">This evaluation session has already been completed and recorded. Re-entry is strictly prohibited.</p>
-                    
-                    <div style="margin-top:30px; background:#161b26; padding:20px 30px; border-radius:20px; border:1px solid #242b3d; box-shadow:0 10px 25px rgba(0,0,0,0.4);">
-                        <p style="color:#e2e8f0; font-size:0.85rem; margin-bottom:12px; font-weight:bold;">🛠️ TEACHER AUTHORIZATION OVERRIDE:</p>
-                        <input type="password" id="overrideInput" placeholder="Enter password to reload" style="padding:10px 14px; border-radius:30px; border:1px solid #333f57; background:#1f2738; color:#fff; text-align:center; outline:none; margin-bottom:12px; width:100%; display:block; box-sizing:border-box;">
-                        <button id="overrideBtn" style="background:#2563eb; color:white; border:none; padding:10px 20px; border-radius:30px; cursor:pointer; font-weight:600; width:100%;">Clear Lock & Reload</button>
-                    </div>
-                </body>`;
-                
-                setTimeout(() => {
-                    document.getElementById('overrideBtn').addEventListener('click', () => {
-                        if (document.getElementById('overrideInput').value.trim() === "5533") {
-                            localStorage.removeItem('worksheet_permanently_submitted');
-                            localStorage.removeItem('worksheet_status_7th');
-                            clearPermanentLock();
-                            sessionStorage.clear();
-                            window.location.reload();
-                        } else {
-                            alert("❌ Incorrect teacher code.");
-                        }
-                    });
-                }, 50);
+                showPermanentLockScreen();
+                return true; // locked
             }
+            
+            // لا قفل محلي -> انتظر المصادقة عبر Student ID وفحص Google Sheets
+            return false;
         }
-
-        runEnforcementCheck();
-
-        // Continually loop history states to disable back-button session hijacking
+        
+        function showPermanentLockScreen() {
+            document.documentElement.innerHTML = `
+            <head><title>Access Denied</title><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+            <body style="background:#0b0f19;color:#ff6b6b;display:flex;flex-direction:column;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;padding:20px;text-align:center;">
+                <h2>🔒 Access Terminated</h2>
+                <p style="color:#a0aec0;margin-top:10px;max-width:400px;">This evaluation session has already been completed and recorded. Re-entry is strictly prohibited.</p>
+                <div style="margin-top:30px; background:#161b26; padding:20px 30px; border-radius:20px;">
+                    <p style="color:#e2e8f0; font-size:0.85rem;">🛠️ TEACHER OVERRIDE:</p>
+                    <input type="password" id="overrideInput" placeholder="Password" style="padding:10px; border-radius:30px; background:#1f2738; color:#fff; text-align:center;">
+                    <button id="overrideBtn" style="background:#2563eb; color:white; border:none; padding:10px 20px; border-radius:30px; margin-top:12px;">Clear Lock & Reload</button>
+                </div>
+            </body>`;
+            setTimeout(() => {
+                document.getElementById('overrideBtn').addEventListener('click', () => {
+                    if (document.getElementById('overrideInput').value.trim() === "0007") {
+                        localStorage.removeItem('worksheet_permanently_submitted');
+                        localStorage.removeItem('worksheet_status_7th');
+                        clearPermanentLock();
+                        sessionStorage.clear();
+                        window.location.reload();
+                    } else alert("❌ Incorrect teacher code.");
+                });
+            }, 50);
+        }
+        
+        // منع back button
         history.pushState(null, null, window.location.href);
         window.addEventListener('popstate', function () {
             history.pushState(null, null, window.location.href);
         });
-
-        /* --- HARD CORE ANTI-COPY IMPLEMENTATION --- */
-        const killInteractions = (e) => {
-            e.preventDefault();
-            return false;
-        };
+        
+        // حظر النسخ والطباعة
+        const killInteractions = (e) => e.preventDefault();
         document.addEventListener('copy', killInteractions);
         document.addEventListener('cut', killInteractions);
         document.addEventListener('contextmenu', killInteractions);
         document.addEventListener('selectstart', killInteractions);
-
-        // Trap critical keyboard short-circuiting routes
+        
         document.addEventListener('keydown', function(e) {
-            // Block Ctrl+C, Ctrl+X, Ctrl+A, Ctrl+U (View Source), Ctrl+S (Save), Ctrl+P (Print)
-            if (e.ctrlKey && (e.key === 'c' || e.key === 'x' || e.key === 'a' || e.key === 'u' || e.key === 's' || e.key === 'p' || e.key === 'C' || e.key === 'X' || e.key === 'A' || e.key === 'U' || e.key === 'S' || e.key === 'P')) {
+            if (e.ctrlKey && (e.key === 'c' || e.key === 'x' || e.key === 'a' || e.key === 'u' || e.key === 's' || e.key === 'p')) {
                 e.preventDefault();
                 return false;
             }
-            // Block F12, and Ctrl+Shift+I / Ctrl+Shift+J / Ctrl+Shift+C (DevTools)
-            if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C' || e.key === 'i' || e.key === 'j' || e.key === 'c'))) {
+            if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C'))) {
                 e.preventDefault();
                 return false;
             }
@@ -465,187 +536,105 @@
 <div id="lockOverlay" class="lock-overlay">
     <div class="lock-card">
         <h2>🔒 Activity Locked</h2>
-        <p>⚠️ You left the page, minimized the tab, completed the activity, or the window lost focus.<br>Enter teacher password to continue.</p>
+        <p>⚠️ You left the page or the window lost focus.<br>Enter teacher password to continue.</p>
         <input type="password" id="passwordInput" placeholder="Enter password" autocomplete="off">
         <button id="unlockBtn">Unlock Worksheet</button>
         <div id="lockErrorMsg" class="error-msg"></div>
     </div>
 </div>
 
+<div id="sheetLockOverlay" class="sheet-lock-overlay">
+    <div class="sheet-lock-card">
+        <h2>🚫 Duplicate Attempt Blocked</h2>
+        <p>This Student ID has already completed the worksheet.<br>Re-entry is not allowed.</p>
+        <p style="font-size:0.8rem;">🔐 Record exists in Google Sheets.</p>
+        <div style="margin-top: 20px;">
+            <input type="password" id="teacherOverrideSheet" placeholder="Teacher password" style="width:100%;">
+            <button id="overrideSheetBtn">Override & Clear</button>
+        </div>
+        <div id="sheetLockError" class="error-msg"></div>
+    </div>
+</div>
+
 <div class="worksheet-container">
     <h1>📝 WOW! Culture — Lesson 8</h1>
-    <div class="sub">Non-verbal Communication & Global Languages | 🔐 Auto-Destruct History Framework Active</div>
+    <div class="sub">Non-verbal Communication & Global Languages | 🔐 Anti-Cheat + Google Sheets Lock</div>
 
-    <div class="activity-card">
-        <div class="activity-title">📖 1. After you read: Complete the sentences</div>
-        <div class="activity-content">
-            <div class="example-text">📌 Write <b>one word</b> in each gap based on your Pupil's Book page 38.</div>
-            
-            <div class="field-row">
-                <span class="field-label">1️⃣</span>
-                <span class="sentence-text">We can <b>communicate</b> with each other <input type="text" id="act1_q1" class="inline-gap" placeholder="gap 1"> using any words.</span>
+    <!-- Student Authentication Panel -->
+    <div class="student-auth-area" id="studentAuthPanel">
+        <h3>🔑 Enter your Details to begin</h3>
+        <input type="text" id="studentIdInput" placeholder="Student ID (e.g., 2024001)" autocomplete="off">
+        <input type="text" id="studentNameInput" placeholder="Full Name in English" autocomplete="off">
+        <button id="startExamBtn">Start Evaluation</button>
+        <div id="authErrorMsg" class="auth-error"></div>
+    </div>
+
+    <div class="workspace-content" id="workspaceContent">
+        <!-- بقية محتوى الاختبار نفسه دون تغيير -->
+        <div class="activity-card">
+            <div class="activity-title">📖 1. After you read: Complete the sentences</div>
+            <div class="activity-content">
+                <div class="example-text">📌 Write <b>one word</b> in each gap based on your Pupil's Book page 38.</div>
+                <div class="field-row"><span class="field-label">1️⃣</span><span class="sentence-text">We can <b>communicate</b> with each other <input type="text" id="act1_q1" class="inline-gap" placeholder="gap 1"> using any words.</span></div>
+                <div class="field-row"><span class="field-label">2️⃣</span><span class="sentence-text">Emojis are <input type="text" id="act1_q2" class="inline-gap" placeholder="gap 2"> that are used in social media and text messages.</span></div>
+                <div class="field-row"><span class="field-label">3️⃣</span><span class="sentence-text">Hieroglyphics are a <input type="text" id="act1_q3" class="inline-gap" placeholder="gap 3"> language that was used in Egypt.</span></div>
+                <div class="field-row"><span class="field-label">4️⃣</span><span class="sentence-text">The <input type="text" id="act1_q4" class="inline-gap" placeholder="gap 4"> Day of Sign Languages is on 23rd September.</span></div>
+                <div id="act1Feedback" class="feedback"></div>
             </div>
-            <div class="field-row">
-                <span class="field-label">2️⃣</span>
-                <span class="sentence-text">Emojis are <input type="text" id="act1_q2" class="inline-gap" placeholder="gap 2"> that are used in social media and text messages.</span>
-            </div>
-            <div class="field-row">
-                <span class="field-label">3️⃣</span>
-                <span class="sentence-text">Hieroglyphics are a <input type="text" id="act1_q3" class="inline-gap" placeholder="gap 3"> language that was used in Egypt.</span>
-            </div>
-            <div class="field-row">
-                <span class="field-label">4️⃣</span>
-                <span class="sentence-text">The <input type="text" id="act1_q4" class="inline-gap" placeholder="gap 4"> Day of Sign Languages is on 23rd September.</span>
-            </div>
-            <div id="act1Feedback" class="feedback"></div>
         </div>
-    </div>
 
-    <div class="activity-card">
-        <div class="activity-title">✔️ 2. Read the sentences and circle T (True) or F (False)</div>
-        <div class="activity-content">
-            <div class="example-text">📌 Select T or F, then write a brief explanation for your answer.</div>
-            
-            <div class="sentence-item">
-                <div class="sentence-row-layout">
-                    <div class="sentence-text">1️⃣ Some types of language use pictures instead of words.</div>
-                    <div class="option-buttons">
-                        <label><input type="radio" name="act2_q1" value="T"> T</label>
-                        <label><input type="radio" name="act2_q1" value="F"> F</label>
-                    </div>
-                </div>
-                <input type="text" id="act2_exp1" class="explanation-input" placeholder="Explanation: Emojis and hieroglyphics use pictures.">
+        <div class="activity-card">
+            <div class="activity-title">✔️ 2. Read the sentences and circle T (True) or F (False)</div>
+            <div class="activity-content">
+                <div class="example-text">📌 Select T or F, then write a brief explanation for your answer.</div>
+                <div class="sentence-item"><div class="sentence-row-layout"><div class="sentence-text">1️⃣ Some types of language use pictures instead of words.</div><div class="option-buttons"><label><input type="radio" name="act2_q1" value="T"> T</label><label><input type="radio" name="act2_q1" value="F"> F</label></div></div><input type="text" id="act2_exp1" class="explanation-input" placeholder="Explanation: Emojis and hieroglyphics use pictures."></div>
+                <div class="sentence-item"><div class="sentence-row-layout"><div class="sentence-text">2️⃣ Emojis aren't popular with 18-25-year-old people.</div><div class="option-buttons"><label><input type="radio" name="act2_q2" value="T"> T</label><label><input type="radio" name="act2_q2" value="F"> F</label></div></div><input type="text" id="act2_exp2" class="explanation-input" placeholder="Explain your answer..."></div>
+                <div class="sentence-item"><div class="sentence-row-layout"><div class="sentence-text">3️⃣ Sad emojis aren't used as often as happy emojis.</div><div class="option-buttons"><label><input type="radio" name="act2_q3" value="T"> T</label><label><input type="radio" name="act2_q3" value="F"> F</label></div></div><input type="text" id="act2_exp3" class="explanation-input" placeholder="Explain your answer..."></div>
+                <div class="sentence-item"><div class="sentence-row-layout"><div class="sentence-text">4️⃣ We can't understand what hieroglyphics mean.</div><div class="option-buttons"><label><input type="radio" name="act2_q4" value="T"> T</label><label><input type="radio" name="act2_q4" value="F"> F</label></div></div><input type="text" id="act2_exp4" class="explanation-input" placeholder="Explain your answer..."></div>
+                <div class="sentence-item"><div class="sentence-row-layout"><div class="sentence-text">5️⃣ There is more than one type of sign language.</div><div class="option-buttons"><label><input type="radio" name="act2_q5" value="T"> T</label><label><input type="radio" name="act2_q5" value="F"> F</label></div></div><input type="text" id="act2_exp5" class="explanation-input" placeholder="Explain your answer..."></div>
+                <div id="act2Feedback" class="feedback"></div>
             </div>
-
-            <div class="sentence-item">
-                <div class="sentence-row-layout">
-                    <div class="sentence-text">2️⃣ Emojis aren't popular with 18-25-year-old people.</div>
-                    <div class="option-buttons">
-                        <label><input type="radio" name="act2_q2" value="T"> T</label>
-                        <label><input type="radio" name="act2_q2" value="F"> F</label>
-                    </div>
-                </div>
-                <input type="text" id="act2_exp2" class="explanation-input" placeholder="Explain your answer...">
-            </div>
-
-            <div class="sentence-item">
-                <div class="sentence-row-layout">
-                    <div class="sentence-text">3️⃣ Sad emojis aren't used as often as happy emojis.</div>
-                    <div class="option-buttons">
-                        <label><input type="radio" name="act2_q3" value="T"> T</label>
-                        <label><input type="radio" name="act2_q3" value="F"> F</label>
-                    </div>
-                </div>
-                <input type="text" id="act2_exp3" class="explanation-input" placeholder="Explain your answer...">
-            </div>
-
-            <div class="sentence-item">
-                <div class="sentence-row-layout">
-                    <div class="sentence-text">4️⃣ We can't understand what hieroglyphics mean.</div>
-                    <div class="option-buttons">
-                        <label><input type="radio" name="act2_q4" value="T"> T</label>
-                        <label><input type="radio" name="act2_q4" value="F"> F</label>
-                    </div>
-                </div>
-                <input type="text" id="act2_exp4" class="explanation-input" placeholder="Explain your answer...">
-            </div>
-
-            <div class="sentence-item">
-                <div class="sentence-row-layout">
-                    <div class="sentence-text">5️⃣ There is more than one type of sign language.</div>
-                    <div class="option-buttons">
-                        <label><input type="radio" name="act2_q5" value="T"> T</label>
-                        <label><input type="radio" name="act2_q5" value="F"> F</label>
-                    </div>
-                </div>
-                <input type="text" id="act2_exp5" class="explanation-input" placeholder="Explain your answer...">
-            </div>
-            <div id="act2Feedback" class="feedback"></div>
         </div>
-    </div>
 
-    <div class="activity-card">
-        <div class="activity-title">🎧 3. Listen to a report about Silbo Gomero: Complete the notes</div>
-        <div class="activity-content">
-            <div class="info-grid">
-                
-                <div class="student-card">
-                    <h3>🗣️ Language Profile: Silbo Gomero</h3>
-                    <ul>
-                        <li>
-                            <span class="label-badge">• Type:</span> 
-                            <span>A very unusual whistling language now used by about <input type="text" id="act3_q2" class="inline-gap" style="width:70px;" placeholder="2"> people.</span>
-                        </li>
-                    </ul>
+        <div class="activity-card">
+            <div class="activity-title">🎧 3. Listen to a report about Silbo Gomero: Complete the notes</div>
+            <div class="activity-content">
+                <div class="info-grid">
+                    <div class="student-card"><h3>🗣️ Language Profile: Silbo Gomero</h3><ul><li><span class="label-badge">• Type:</span> <span>A very unusual whistling language now used by about <input type="text" id="act3_q2" class="inline-gap" style="width:70px;" placeholder="2"> people.</span></li></ul></div>
+                    <div class="student-card" style="border-left-color: #2a6f8f;"><h3>📍 Place Used</h3><ul><li><span class="label-badge">• Location:</span> <span>Used on the <input type="text" id="act3_q3" class="inline-gap" placeholder="3"> of La Gomera, which is part of Spain.</span></li><li><span class="label-badge">• Geography:</span> <span>In the mountains, where people are separated by <input type="text" id="act3_q4" class="inline-gap" placeholder="4">.</span></li><li><span class="label-badge">• Advantage:</span> <span>Easier than <input type="text" id="act3_q5" class="inline-gap" placeholder="5"> long distances to speak with people.</span></li></ul></div>
+                    <div class="student-card" style="border-left-color: #2c6e2c;"><h3>⏳ History & Status</h3><ul><li><span class="label-badge">• Origins:</span> <span>Used by the Guanches people for <input type="text" id="act3_q6" class="inline-gap" placeholder="6"> of years.</span></li><li><span class="label-badge">• Evolution:</span> <span>Changed later to communicate the <input type="text" id="act3_q7" class="inline-gap" placeholder="7"> language.</span></li><li><span class="label-badge">• Education:</span> <span>Became an official school subject on La Gomera in <input type="text" id="act3_q8" class="inline-gap" placeholder="8">.</span></li><li><span class="label-badge">• UNESCO:</span> <span>Recognised as a World Heritage language by UNESCO in <input type="text" id="act3_q9" class="inline-gap" placeholder="9">.</span></li><li><span class="label-badge">• Modern Day:</span> <span>Now popular with <input type="text" id="act3_q10" class="inline-gap" placeholder="10"> who come to La Gomera to hear it.</span></li></ul></div>
                 </div>
-
-                <div class="student-card" style="border-left-color: #2a6f8f;">
-                    <h3>📍 Place Used</h3>
-                    <ul>
-                        <li>
-                            <span class="label-badge">• Location:</span> 
-                            <span>Used on the <input type="text" id="act3_q3" class="inline-gap" placeholder="3"> of La Gomera, which is part of Spain.</span>
-                        </li>
-                        <li>
-                            <span class="label-badge">• Geography:</span> 
-                            <span>In the mountains, where people are separated by <input type="text" id="act3_q4" class="inline-gap" placeholder="4">.</span>
-                        </li>
-                        <li>
-                            <span class="label-badge">• Advantage:</span> 
-                            <span>Easier than <input type="text" id="act3_q5" class="inline-gap" placeholder="5"> long distances to speak with people.</span>
-                        </li>
-                    </ul>
-                </div>
-
-                <div class="student-card" style="border-left-color: #2c6e2c;">
-                    <h3>⏳ History & Status</h3>
-                    <ul>
-                        <li>
-                            <span class="label-badge">• Origins:</span> 
-                            <span>Used by the Guanches people for <input type="text" id="act3_q6" class="inline-gap" placeholder="6"> of years.</span>
-                        </li>
-                        <li>
-                            <span class="label-badge">• Evolution:</span> 
-                            <span>Changed later to communicate the <input type="text" id="act3_q7" class="inline-gap" placeholder="7"> language.</span>
-                        </li>
-                        <li>
-                            <span class="label-badge">• Education:</span> 
-                            <span>Became an official school subject on La Gomera in <input type="text" id="act3_q8" class="inline-gap" placeholder="8">.</span>
-                        </li>
-                        <li>
-                            <span class="label-badge">• UNESCO:</span> 
-                            <span>Recognised as a World Heritage language by UNESCO in <input type="text" id="act3_q9" class="inline-gap" placeholder="9">.</span>
-                        </li>
-                        <li>
-                            <span class="label-badge">• Modern Day:</span> 
-                            <span>Now popular with <input type="text" id="act3_q10" class="inline-gap" placeholder="10"> who come to La Gomera to hear it.</span>
-                        </li>
-                    </ul>
-                </div>
-
+                <div id="act3Feedback" class="feedback"></div>
             </div>
-            <div id="act3Feedback" class="feedback"></div>
         </div>
-    </div>
 
-    <div style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap;">
-        <button class="btn-check" id="checkAllBtn">✅ Auto-Correct & Score</button>
-        <button class="btn-check" id="resetBtn" style="background: #5e7c8c;">⟳ Reset all answers</button>
+        <div style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap;">
+            <button class="btn-check" id="checkAllBtn">✅ Auto-Correct & Score</button>
+            <button class="btn-check" id="resetBtn" style="background: #5e7c8c;">⟳ Reset all answers</button>
+        </div>
+        <div id="totalScoreArea" class="score-area">📊 Total score: -- / 18</div>
     </div>
-    <div id="totalScoreArea" class="score-area">📊 Total score: -- / 18</div>
 </div>
 
 <script>
-    /* --- SECURITY SUBSYSTEM --- */
+    // --------------------- GOOGLE SHEETS AUTH & LOCK ---------------------
     const TEACHER_PASSWORD = "0007";
     let isLocked = false;
     let hasAnswersBeforeLeave = false;
-
+    let currentStudentId = "";
+    
+    // عناصر DOM
     const lockOverlay = document.getElementById('lockOverlay');
+    const sheetLockOverlay = document.getElementById('sheetLockOverlay');
     const passwordInput = document.getElementById('passwordInput');
     const unlockBtn = document.getElementById('unlockBtn');
     const lockErrorMsg = document.getElementById('lockErrorMsg');
-
+    const startBtn = document.getElementById('startExamBtn');
+    const studentIdInput = document.getElementById('studentIdInput');
+    const authErrorMsg = document.getElementById('authErrorMsg');
+    const workspace = document.getElementById('workspaceContent');
+    
+    // دوال القفل المحلي
     function lockPage(reason = "generic") {
         if (isLocked) return;
         isLocked = true;
@@ -655,7 +644,7 @@
         passwordInput.value = '';
         localStorage.setItem('worksheet_status_7th', 'locked');
     }
-
+    
     function unlockPage() {
         if (!isLocked) return;
         if (passwordInput.value.trim() === TEACHER_PASSWORD) {
@@ -669,24 +658,24 @@
             passwordInput.value = '';
         }
     }
-
+    
     unlockBtn.addEventListener('click', unlockPage);
     passwordInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') unlockPage(); });
-
+    
+    // مراقبة مغادرة الصفحة
     document.addEventListener("visibilitychange", () => {
-        if (document.hidden && hasAnswersBeforeLeave && !isLocked) {
+        if (document.hidden  && !isLocked && document.body.classList.contains('authenticated')) {
             lockPage('Tab leave caught');
             alert("Activity Locked: You switched tabs or minimized the page.");
         }
     });
-
     window.addEventListener("blur", function() {
-        if (!isLocked && hasAnswersBeforeLeave) {
+        if (!isLocked  && document.body.classList.contains('authenticated')) {
             lockPage('Window lost focus');
             alert("Activity Locked: Window lost focus.");
         }
     });
-
+    
     function checkAnyAnswer() {
         for (let i = 1; i <= 5; i++) {
             if (document.querySelector(`input[name="act2_q${i}"]:checked`)) return true;
@@ -697,27 +686,76 @@
         }
         return false;
     }
-
     function updateAnswerFlag() { hasAnswersBeforeLeave = checkAnyAnswer(); }
     document.addEventListener('change', updateAnswerFlag);
     document.addEventListener('input', updateAnswerFlag);
+    
+    // بدء الاختبار بعد التحقق من Google Sheets
 
-    window.addEventListener('load', function() {
-        if (localStorage.getItem('worksheet_status_7th') === 'locked') {
-            lockPage('Persisted state match');
+startBtn.addEventListener('click', async () => {
+        const studentId = studentIdInput.value.trim();
+        const studentName = document.getElementById('studentNameInput').value.trim();
+        
+        if (!studentId || !studentName) {
+            authErrorMsg.innerText = "❌ Please enter both Student ID and Name.";
+            return;
         }
-    });
+        // تحقق من أن الاسم باللغة الإنجليزية (اختياري)
+        if (!/^[a-zA-Z\s]+$/.test(studentName)) {
+            authErrorMsg.innerText = "❌ Please write your name in English only.";
+            return;
+        }
 
-    /* --- ANSWER KEYS & GRADING --- */
+        authErrorMsg.innerText = "⏳ Checking with Google Sheets...";
+        startBtn.disabled = true;
+        
+        try {
+            const exists = await checkStudentInSheet(studentId);
+            if (exists) {
+                authErrorMsg.innerText = "🚫 This Student ID has already completed the worksheet. Access denied.";
+                sheetLockOverlay.style.display = 'flex';
+                document.body.classList.add('sheet-locked');
+                
+                document.getElementById('overrideSheetBtn').onclick = () => {
+                    const pwd = document.getElementById('teacherOverrideSheet').value;
+                    if (pwd === "0007") {
+                        localStorage.clear();
+                        sessionStorage.clear();
+                        window.location.reload();
+                    } else {
+                        document.getElementById('sheetLockError').innerText = "Incorrect password.";
+                    }
+                };
+                startBtn.disabled = false;
+                return;
+            }
+        } catch(err) {
+            authErrorMsg.innerText = "⚠️ Could not connect to Google Sheets.";
+            console.warn(err);
+        }
+        
+        globalStudentId = studentId;
+        globalStudentName = studentName;
+        currentStudentId = studentId;
+        
+        // تسجيل وقت البدء
+        startTime = new Date();
+        
+        localStorage.setItem('current_worksheet_student', studentId);
+        document.body.classList.add('authenticated');
+        workspace.style.display = 'block';
+        authErrorMsg.innerText = "";
+        startBtn.disabled = false;
+    });
+    
+    // --------------------- GRADING & SUBMIT WITH SHEETS SAVE ---------------------
     const act1Keys = {
         act1_q1: /without/i,
         act1_q2: /(pictures|symbols|emojis)/i,
         act1_q3: /(picture|written|hieroglyphic)/i,
         act1_q4: /(world|international)/i
     };
-
     const act2Keys = { act2_q1: 'T', act2_q2: 'F', act2_q3: 'T', act2_q4: 'F', act2_q5: 'T' };
-
     const act3Keys = {
         act3_q2: /(22000|22,000|thousand)/i,
         act3_q3: /(island|islands)/i,
@@ -729,80 +767,81 @@
         act3_q9: /(2009)/i,
         act3_q10: /(tourists|visitors)/i
     };
-
-    function processGrading() {
+    
+    function calculateScore() {
         let score = 0;
-
-        // Activity 1
         let a1Score = 0;
         for (let id in act1Keys) {
             let val = document.getElementById(id).value.trim();
             if (act1Keys[id].test(val)) a1Score++;
         }
         score += a1Score;
-
-        // Activity 2
+        
         let a2Score = 0;
         for (let i = 1; i <= 5; i++) {
             let rad = document.querySelector(`input[name="act2_q${i}"]:checked`);
             if (rad && rad.value === act2Keys[`act2_q${i}`]) a2Score++;
         }
         score += a2Score;
-
-        // Activity 3
+        
         let a3Score = 0;
         for (let id in act3Keys) {
             let val = document.getElementById(id).value.trim();
             if (act3Keys[id].test(val)) a3Score++;
         }
         score += a3Score;
-
-        // Store permanent submission state into LocalStorage and IndexedDB
-        localStorage.setItem('worksheet_permanently_submitted', 'true');
-        if (typeof writePermanentLock === "function") {
-            writePermanentLock();
+        return { score, a1Score, a2Score, a3Score };
+    }
+    
+    async function processGrading() {
+        if (!document.body.classList.contains('authenticated')) {
+            alert("Please enter your details first.");
+            return;
         }
-
-        alert(`📊 EVALUATION COMPLETED\n\nTotal Score: ${score} / 18\n\n- Activity 1: ${a1Score}/4\n- Activity 2: ${a2Score}/5\n- Activity 3: ${a3Score}/9\n\nClick OK to terminate this session securely.`);
-
-        window.open('', '_self', '');
-        window.close();
-
-        // Fallback layout if browser blocks tab closing
+        const { score, a1Score, a2Score, a3Score } = calculateScore();
+        
+        // حساب الوقت المستغرق
+        const endTime = new Date();
+        const timeDiffSeconds = Math.round((endTime - startTime) / 1000);
+        const minutes = Math.floor(timeDiffSeconds / 60);
+        const seconds = timeDiffSeconds % 60;
+        const timeSpent = `${minutes}m ${seconds}s`; // الصيغة: 5m 30s
+        
+        // حفظ النتيجة مع الاسم والوقت
+        const saved = await saveResultToSheet(globalStudentId, globalStudentName, score, timeSpent);
+        if (!saved) {
+            if (!confirm("⚠️ Failed to reach Google Sheets. Submit locally anyway?")) return;
+        }
+        
+        localStorage.setItem('worksheet_permanently_submitted', 'true');
+        writePermanentLock();
+        
+        alert(`📊 EVALUATION COMPLETED\nName: ${globalStudentName}\nTime: ${timeSpent}\nTotal Score: ${score} / 18`);
+        
         document.documentElement.innerHTML = `
-        <head>
-            <title>Submitted</title>
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <style>body { -webkit-user-select:none; user-select:none; }</style>
-        </head>
-        <body style="background:#0b0f19;color:#4ade80;display:flex;flex-direction:column;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;padding:20px;text-align:center;">
+        <head><title>Submitted</title><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+        <body style="background:#0b0f19;color:#4ade80;display:flex;flex-direction:column;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;text-align:center;">
             <h2>✅ Score Logged Successfully</h2>
-            <p style="color:#a0aec0;margin-top:10px;margin-bottom:30px;">The evaluation session has been locked. This tab can be closed safely.</p>
-            
-            <div style="background:#161b26; padding:20px 30px; border-radius:20px; border:1px solid #242b3d; box-shadow:0 10px 25px rgba(0,0,0,0.4);">
-                <p style="color:#e2e8f0; font-size:0.85rem; margin-bottom:12px; font-weight:bold;">🛠️ TEACHER AUTHORIZATION OVERRIDE:</p>
-                <input type="password" id="fallbackOverrideInput" placeholder="Enter password to reload" style="padding:10px 14px; border-radius:30px; border:1px solid #333f57; background:#1f2738; color:#fff; text-align:center; outline:none; margin-bottom:12px; width:100%; display:block; box-sizing:border-box;">
-                <button id="fallbackOverrideBtn" style="background:#2563eb; color:white; border:none; padding:10px 20px; border-radius:30px; cursor:pointer; font-weight:600; width:100%;">Clear Lock & Reload</button>
+            <p style="color:#a0aec0;">Name: ${globalStudentName} | Score: ${score}/18 | Time: ${timeSpent}</p>
+            <div style="margin-top:30px; background:#161b26; padding:20px; border-radius:20px;">
+                <p style="color:#e2e8f0;">🛠️ TEACHER OVERRIDE:</p>
+                <input type="password" id="fallbackOverrideInput" placeholder="Password" style="padding:10px; border-radius:30px;">
+                <button id="fallbackOverrideBtn" style="background:#2563eb; color:white; margin-top:12px; border:none; padding:10px 20px; border-radius:30px;">Clear Lock</button>
             </div>
         </body>`;
-
         setTimeout(() => {
             document.getElementById('fallbackOverrideBtn').addEventListener('click', () => {
-                if (document.getElementById('fallbackOverrideInput').value.trim() === "5533") {
-                    localStorage.removeItem('worksheet_permanently_submitted');
-                    localStorage.removeItem('worksheet_status_7th');
-                    if(typeof clearPermanentLock === "function") clearPermanentLock();
+                if (document.getElementById('fallbackOverrideInput').value === "0007") {
+                    localStorage.clear();
                     sessionStorage.clear();
+                    clearPermanentLock();
                     window.location.reload();
-                } else {
-                    alert("❌ Incorrect teacher code.");
-                }
+                } else alert("Wrong code.");
             });
         }, 50);
     }
-
+    
     document.getElementById('checkAllBtn').addEventListener('click', processGrading);
-
     document.getElementById('resetBtn').addEventListener('click', () => {
         if (localStorage.getItem('worksheet_permanently_submitted') === 'true') return;
         const inputs = document.querySelectorAll('input[type="text"]');
@@ -810,11 +849,18 @@
         for(let i=1; i<=5; i++) {
             document.querySelectorAll(`input[name="act2_q${i}"]`).forEach(r => r.checked = false);
         }
-        document.getElementById('act1Feedback').innerHTML = '';
-        document.getElementById('act2Feedback').innerHTML = '';
-        document.getElementById('act3Feedback').innerHTML = '';
-        document.getElementById('totalScoreArea').innerHTML = '📊 Total score: -- / 18';
         updateAnswerFlag();
+    });
+    
+    // بدء فحص القفل المحلي أولاً
+    runEnforcementCheck().then(locked => {
+        if (!locked) {
+            // عرض واجهة الـ ID
+            document.body.classList.remove('authenticated');
+            workspace.style.display = 'none';
+        } else {
+            document.body.classList.add('sheet-locked');
+        }
     });
 </script>
 </body>
